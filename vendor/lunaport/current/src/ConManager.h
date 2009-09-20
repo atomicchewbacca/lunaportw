@@ -116,7 +116,6 @@ class ConManager // connection manager
 
 		bool send_generic (void *packet, unsigned long peer, int packet_size); // makes a copy of packet in sync mode
 		bool receive_generic (void *packet, unsigned long peer, int packet_size);
-		bool get_esc (); // check for escape button press
 
 	public:
 		ConManager ();

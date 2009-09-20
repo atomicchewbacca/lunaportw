@@ -23,8 +23,8 @@ $dbfile = "lplobby.sqlt"; // see .htaccess
 $netstringlength = 512;
 $msg = "Welcome to the lobby. Only games matching your LunaPort and game version will be listed."; // message sent to users on connect
 // timeout settings, lower values get better behaviour, but more traffic and cpu usage on the server
-$refresh = 60 * 4; // hosts reenter their games every 4min, must be >0
-$timeout = 60 * 5; // remove games that weren't refreshed for 5min, must be >refresh
+$refresh = 60 * 2; // hosts reenter their games every 4min, must be >0
+$timeout = 60 * 4; // remove games that weren't refreshed for 5min, must be >refresh
 
 // only run lobby code when called by LunaPort
 if (preg_match("/^LunaPort /", $_ENV['HTTP_USER_AGENT'])) {

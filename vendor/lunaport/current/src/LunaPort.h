@@ -27,7 +27,7 @@
 
 
 // game settings
-#define VERSION "r47"
+#define VERSION "r48"
 #define GAME "ヴァンガードプリンセス.exe"
 #define ALTGAME "game.exe"
 #define DEFAULT_LOBBY "http://lunaport.bplaced.net:80/lobby.php"

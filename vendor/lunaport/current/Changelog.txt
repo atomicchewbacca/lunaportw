@@ -1,3 +1,12 @@
+r48:
+- add Sound, PlayHostConnect and PlayLobbyChange options to lunaport.ini
+- add notify.wav to archive
+- add audio notification on connection (for host) and on change of game list in lobby when watching
+- add automatic refresh mode to lobby list to watch for new games
+- default refresh rate in lobby.php is now 2min instead of 4min
+- actually implement DisplayLobbyComments option, oops
+- fix recalculation of ping by giving delay of 0
+
 r47:
 - no longer include LunaPort_debug.exe, the filesize has grown too much
 - add Lobby, LobbyComment and DisplayLobbyComments options to lunaport.ini

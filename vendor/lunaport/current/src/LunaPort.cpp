@@ -26,6 +26,7 @@
 #include <time.h>
 #include <windows.h>
 #include <winuser.h>
+#include <mmsystem.h>
 #include <tlhelp32.h>
 #include <iostream>
 #include <string>
@@ -78,6 +79,8 @@ int terminate_ping_thread;
 int check_exe;
 int ask_spectate;
 int keep_hosting;
+int play_host_sound;
+int play_lobby_sound;
 int display_framerate;
 int display_inputrate;
 int display_names;
@@ -86,6 +89,7 @@ char game_exe[_MAX_PATH];
 char own_name[NET_STRING_BUFFER], p1_name[NET_STRING_BUFFER], p2_name[NET_STRING_BUFFER];
 char set_blacklist[NET_STRING_BUFFER], blacklist1[NET_STRING_BUFFER], blacklist2[NET_STRING_BUFFER];
 char lobby_url[NET_STRING_BUFFER], lobby_comment[NET_STRING_BUFFER];
+char sound[_MAX_PATH];
 ConManager conmanager;
 StageManager stagemanager;
 Session session;
@@ -93,6 +97,7 @@ Lobby lobby;
 
 void l () { /*WaitForSingleObject(mutex_print, INFINITE);*/ } // l() to lock print mutex
 void u () { /*ReleaseMutex(mutex_print);*/ } // u() to unlock print mutex
+void play_sound () { PlaySound(sound, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT); }
 char *ip2str (unsigned long ip)
 {
 	SOCKADDR_IN sa;
@@ -2434,6 +2439,8 @@ WAIT:
 		d = (int)(((float)pings + MS_PER_INPUT) / (2.0 * MS_PER_INPUT) + SAFETY_DELAY);
 		if (d > 0xff)
 			d = 0xff;
+		if (play_host_sound)
+			play_sound();
 		if (ask_delay)
 		{
 			terminate_ping_thread = 0;
@@ -2441,8 +2448,11 @@ WAIT:
 			l(); printf("\nDetermined ping of %ums. This corresponds to an input delay of %u input requests.\nIf you experience heavy lag, try increasing the delay.\nPlease enter delay (0 = ping again) ", pings, d); u();
 			SetForegroundWindow(FindWindow(NULL, "LunaPort " VERSION));
 			read_int(&d);
+			terminate_ping_thread = 1;
+			WaitForSingleObject(sem_ping_end, INFINITE);
 			TerminateThread(ping_thread, 0);
 			CloseHandle(ping_thread);
+			ping_thread = NULL;
 		}
 		else
 		{
@@ -2518,7 +2528,7 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 				  int *ask_spectate, int *display_framerate, int *display_inputrate, int *display_names, char *game_exe,
 				  char *own_name, char *set_blacklist, int *blacklist_local, int *check_exe, int *max_points,
 				  int *keep_session_log, char *session_log, char *lobby_url, char *lobby_comment, int *display_lobby_comments,
-				  int *keep_hosting)
+				  int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound)
 {
 	char config_filename[_MAX_PATH];
 	strcpy(config_filename, dir_prefix);
@@ -2534,6 +2544,8 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 	*display_inputrate = GetPrivateProfileInt("LunaPort", "DisplayInputrate", 1, config_filename);
 	*display_names = GetPrivateProfileInt("LunaPort", "DisplayNames", 1, config_filename);
 	*display_lobby_comments = GetPrivateProfileInt("LunaPort", "DisplayLobbyComments", 1, config_filename);
+	*play_host_sound = GetPrivateProfileInt("LunaPort", "PlayHostConnect", 1, config_filename);
+	*play_lobby_sound = GetPrivateProfileInt("LunaPort", "PlayLobbyChange", 1, config_filename);
 	*blacklist_local = GetPrivateProfileInt("LunaPort", "UseBlacklistLocal", 0, config_filename);
 	*max_points = GetPrivateProfileInt("LunaPort", "MaxPoints", 2, config_filename);
 	*keep_session_log = GetPrivateProfileInt("LunaPort", "KeepSessionLog", 1, config_filename);
@@ -2544,6 +2556,7 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 	GetPrivateProfileString("LunaPort", "SessionLog", "session.log", session_log, NET_STRING_BUFFER-1, config_filename);
 	GetPrivateProfileString("LunaPort", "Lobby", DEFAULT_LOBBY, lobby_url, NET_STRING_BUFFER-1, config_filename);
 	GetPrivateProfileString("LunaPort", "LobbyComment", "", lobby_comment, NET_STRING_BUFFER-1, config_filename);
+	GetPrivateProfileString("LunaPort", "Sound", "notify.wav", sound, _MAX_PATH-1, config_filename);
 }
 
 void calc_crcs ()
@@ -2579,6 +2592,7 @@ void calc_crcs ()
 		MessageBox(hwnd, "Cannot open KGT file for CRC32 calculation.\nPlease check the filename of your KGT file,\nit should match that of your game exe.", "LunaPort Error", MB_OK | MB_ICONERROR);
 		exit(1);
 	}
+	//l(); printf("KGT CRC32: %08X Size: %d\n", kgt_crc, kgt_size); u();
 }
 
 void unregister_lobby ()
@@ -2668,7 +2682,7 @@ int main(int argc, char* argv[])
 	read_config(&port, &record_replay, &allow_spectators, &set_max_stages, &ask_delay, &ask_spectate, &display_framerate,
 	            &display_inputrate, &display_names, game_exe, own_name, set_blacklist, &blacklist_local, &check_exe,
 				&max_points, &keep_session_log, session_log, lobby_url, lobby_comment, &display_lobby_comments,
-				&keep_hosting);
+				&keep_hosting, sound, &play_host_sound, &play_lobby_sound);
 
 	max_stages = set_max_stages;
 	calc_crcs();
@@ -2684,7 +2698,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 	curl_global_init(CURL_GLOBAL_ALL);
-	lobby.init(lobby_url, kgt_crc, kgt_size, own_name, lobby_comment, port, &lobby_flag);
+	lobby.init(lobby_url, kgt_crc, kgt_size, own_name, lobby_comment, port, &lobby_flag, display_lobby_comments, play_lobby_sound);
 	atexit(unregister_lobby);
 
 	CreateDirectory("Replays", NULL);

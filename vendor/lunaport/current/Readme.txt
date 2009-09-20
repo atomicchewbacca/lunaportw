@@ -1,4 +1,4 @@
-LunaPort r47 Readme
+LunaPort r48 Readme
 
 
 LunaPort is an original netplay application for the free game Vanguard Princess,
@@ -55,7 +55,7 @@ W: Reset game speed to normal, unpause
 E: Slow down game speed
 R: Speed up game speed
 
-Known working: r11, r35, r36, r38, r39, r40, r42, r43, r45, r46
+Known working: r11, r35-r36, r38-r43, r44-r47
 (These versions have been used successfully to play Vanguard Princess.)
 
 Please excuse the desync problems from before. Things should be better now.
