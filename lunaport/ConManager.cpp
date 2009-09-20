@@ -27,6 +27,19 @@ extern void l ();
 extern void u ();
 extern char *ip2str(unsigned long ip);
 
+bool get_esc ()
+{
+	HWND hwnd;
+	DWORD pid;
+
+	hwnd = GetForegroundWindow();
+	GetWindowThreadProcessId(hwnd, &pid);
+	if (GetCurrentProcessId() == pid && GetKeyState(VK_ESCAPE) & 0x80)
+		return true;
+
+	return false;
+}
+
 void simple_luna_packet(luna_packet *lp, int type, int id)
 {
 	ZeroMemory(lp, sizeof(luna_packet));
@@ -903,19 +916,6 @@ void ConManager::disconnect_nobye (unsigned long peer)
 			++j;
 	}
 	ReleaseMutex(mutex);
-}
-
-bool ConManager::get_esc ()
-{
-	HWND hwnd;
-	DWORD pid;
-
-	hwnd = GetForegroundWindow();
-	GetWindowThreadProcessId(hwnd, &pid);
-	if (GetCurrentProcessId() == pid && GetKeyState(VK_ESCAPE) & 0x80)
-		return true;
-
-	return false;
 }
 
 unsigned long ConManager::accept (ReceiveCallback callback, int *esc)

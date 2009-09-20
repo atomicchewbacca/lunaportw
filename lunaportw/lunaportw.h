@@ -36,6 +36,8 @@ extern int terminate_ping_thread;
 extern int check_exe;
 extern int ask_spectate;
 extern int keep_hosting;
+extern int play_host_sound;
+extern int play_lobby_sound;
 extern int display_framerate;
 extern int display_inputrate;
 extern int display_names;
@@ -44,13 +46,13 @@ extern char game_exe[_MAX_PATH], replays_dir[_MAX_PATH];
 extern char own_name[NET_STRING_BUFFER], p1_name[NET_STRING_BUFFER], p2_name[NET_STRING_BUFFER];
 extern char set_blacklist[NET_STRING_BUFFER], blacklist1[NET_STRING_BUFFER], blacklist2[NET_STRING_BUFFER];
 extern char lobby_url[NET_STRING_BUFFER], lobby_comment[NET_STRING_BUFFER];
+extern char sound[_MAX_PATH];
 extern ConManager conmanager;
 extern StageManager stagemanager;
 extern Session session;
 extern Lobby lobby;
 
-extern int record_replay;
-extern int ask_delay;
+extern int record_replay, ask_delay;
 
 extern CLunaportwView *cur_logwin;
 
@@ -91,11 +93,13 @@ extern void spectate_game (char *ip_str, int port, int record_replay);
 extern void join_game (char *ip_str, int port, int record_replay);
 extern void ping_thread_loop (unsigned long peer);
 extern void host_game (int seed, int record_replay, int ask_delay);
+extern void print_menu (int record_replay);
+extern UINT CALLBACK ofn_hook (HWND hdlg, UINT msg, WPARAM wparam, LPARAM lparam);
 extern void read_config (unsigned int *port, int *record_replay, int *allow_spectators, unsigned int *max_stages, int *ask_delay,
 	int *ask_spectate, int *display_framerate, int *display_inputrate, int *display_names, char *game_exe,
 	char *own_name, char *set_blacklist, int *blacklist_local, int *check_exe, int *max_points,
 	int *keep_session_log, char *session_log, char *lobby_url, char *lobby_comment, int *display_lobby_comments,
-	int *keep_hosting, char *replays_dir);
+	int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound, char *replays_dir);
 extern void calc_crcs ();
 extern void unregister_lobby ();
 extern bool inifile_exists(const char *argv0);

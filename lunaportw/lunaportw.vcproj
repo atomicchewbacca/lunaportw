@@ -50,7 +50,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="$(SolutionDir)..\src"
+				AdditionalIncludeDirectories="$(SolutionDir)..\lunaport"
 				PreprocessorDefinitions="WIN32;_WINDOWS;STRICT;_DEBUG;CURL_STATICLIB;printf=__log_printf"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -136,7 +136,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(SolutionDir)..\src"
+				AdditionalIncludeDirectories="$(SolutionDir)..\lunaport"
 				PreprocessorDefinitions="WIN32;_WINDOWS;STRICT;NDEBUG;CURL_STATICLIB;printf=__log_printf"
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="2"
@@ -198,7 +198,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\ConManager.cpp"
+				RelativePath="..\lunaport\ConManager.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -218,7 +218,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\Crc32.cpp"
+				RelativePath="..\lunaport\Crc32.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -238,7 +238,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\HTTP.cpp"
+				RelativePath="..\lunaport\HTTP.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -258,7 +258,7 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\Lobby.cpp"
+				RelativePath="..\lunaport\Lobby.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -266,6 +266,7 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"
+						UndefinePreprocessorDefinitions="_UNICODE;UNICODE"
 					/>
 				</FileConfiguration>
 				<FileConfiguration
@@ -274,6 +275,27 @@
 					<Tool
 						Name="VCCLCompilerTool"
 						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\lunaport\LunaPort.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+						UndefinePreprocessorDefinitions="_UNICODE;UNICODE"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UndefinePreprocessorDefinitions="_UNICODE;UNICODE"
 					/>
 				</FileConfiguration>
 			</File>
@@ -290,7 +312,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\Session.cpp"
+				RelativePath="..\lunaport\Session.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -310,7 +332,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\StageManager.cpp"
+				RelativePath=".\SettingDlg.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\lunaport\StageManager.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -359,27 +385,27 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\Code.h"
+				RelativePath="..\lunaport\Code.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\ConManager.h"
+				RelativePath="..\lunaport\ConManager.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\Crc32.h"
+				RelativePath="..\lunaport\Crc32.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\HTTP.h"
+				RelativePath="..\lunaport\HTTP.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\Lobby.h"
+				RelativePath="..\lunaport\Lobby.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\LunaPort.h"
+				RelativePath="..\lunaport\LunaPort.h"
 				>
 			</File>
 			<File
@@ -399,11 +425,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\Session.h"
+				RelativePath="..\lunaport\Session.h"
 				>
 			</File>
 			<File
-				RelativePath="..\src\StageManager.h"
+				RelativePath=".\SettingDlg.h"
+				>
+			</File>
+			<File
+				RelativePath="..\lunaport\StageManager.h"
 				>
 			</File>
 			<File

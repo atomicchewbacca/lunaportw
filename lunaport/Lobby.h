@@ -39,6 +39,8 @@ class Lobby
 		int state;                         // -1 = none, 0 = waiting, 1 = playing
 		int refresh;
 		int last_input;
+		int display_comments;
+		int play_sounds;
 		int *lobby;                        // pointer to lobby flag, should be updated as necessary, 0 = no connection, 1 = connected as host
 
 		void update_menu (lplobby_head *result);
@@ -46,7 +48,7 @@ class Lobby
 
 	public:
 		Lobby ();
-		void init (char *url, int crc, int size, char *name, char *comment, unsigned short port, int *lobby);
+		void init (char *url, int crc, int size, char *name, char *comment, unsigned short port, int *lobby, int display_comments, int play_sounds);
 		bool menu (char *ip, int *port, int *spec);
 		void host ();
 		void run (char *name, char *name2);
