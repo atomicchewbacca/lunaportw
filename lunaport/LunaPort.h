@@ -27,9 +27,11 @@
 
 
 // game settings
-#define VERSION "r47"
+#define VERSION "r47b"
+#define INIFILE "lunaport.ini"
 #define GAME "ヴァンガードプリンセス.exe"
 #define ALTGAME "game.exe"
+#define REPLAYDIR "Replays"
 #define DEFAULT_LOBBY "http://lunaport.bplaced.net:80/lobby.php"
 #define PORT 7500              // default port (UDP)
 #define MS_PER_INPUT 10        // this is correct, don't believe it? measure it with r22 by recording a replay locally
