@@ -161,6 +161,7 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 	// handle errors
 	if (err)
 	{
+		ReleaseMutex(mutex);
 		l();
 		printf("%s\n", http_error(err));
 		u();

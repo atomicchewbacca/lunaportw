@@ -603,6 +603,7 @@ void ConManager::receive_thread ()
 
 				if (accepted == from.sin_addr.s_addr)
 				{
+					ReleaseMutex(mutex);
 					// resend ok
 					luna_packet ok;
 					simple_luna_packet(&ok, PACKET_TYPE_OK, 1);
