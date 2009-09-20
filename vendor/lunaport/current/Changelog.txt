@@ -1,0 +1,224 @@
+r47:
+- no longer include LunaPort_debug.exe, the filesize has grown too much
+- add Lobby, LobbyComment and DisplayLobbyComments options to lunaport.ini
+- add simple lobby functionality (using HTTP, no chat)
+- add KeepHosting option to lunaport.ini
+- allow hosting to be cancelled with Esc key
+- clarify readme about button config
+- add license header to source code files
+- let's remember: when distributing binaries of code, which is based on gpl code, we have to distribute the source code too
+- add actual gnu gpl license text to lunaport archive, before it was only mentioned in the readme
+- minor bugfix
+
+r46:
+- add KeepSessionLog and SessionLog to lunaport.ini
+- add session log functionality; character and stage names are taken from filenames (why is Haruka's file named Yukari? others look wrong too)
+- add MaxPoints option to lunaport.ini, in case some games do not use best of three
+- add recognition for lost/won matches
+- ignore multiple protocol level errors from same host, one error message is enough
+- add note about former desync sources and differences between r38 and r40-r46 to readme
+- add player names to replay filename
+- clarify "invalid protocol version" error message (depending on version, either "peer's LunaPort is too old" or "peer's LunaPort is newer, please upgrade")
+
+r45:
+- accept bigger input resend requests
+- revert to r43, reapply KGT mismatch error fix (r44 had low stability, and no performance gain)
+
+r44:
+- switch from mutexes to critical sections and from semaphores to metered sections (possible slight performance gain)
+- fix KGT mismatch error messages, received value was always displayed as 0
+
+r43:
+- tweak spectator mode, bump protocol version (will likely still require more adjustments in the future)
+- add some more debug info for access violations
+- fix spectator mode
+- fix ping recalculation on entering 0 as delay
+- some network fixes
+- add breakpoint profiling to debug build
+- both r39 and r40 had protocol version bumps, forgot to note it then
+
+r42:
+- add replay playback speed display to title bar
+- fixed bug with q and w replay controls
+
+r41:
+- add pause, fast-forward and slow-motion controls for replay playback (see Readme.txt)
+- add option to disable game exe crc32 and size check to lunaport.ini
+- fix crash at end of replay playback
+
+r40:
+- network synchronize stage settings
+- stage blacklist is, by default, not used for local (mode 3) games
+- blacklist stages 6 and 7 by default in lunaport.ini, because of low FPS
+- add stage blacklist as StageBlacklist and UseBlacklistLocal settings in lunaport.ini
+- ensure all players use identical game versions (crc32 and size of KGT file)
+- ensure game exe is compatible to lunaport (crc32 and size of exe)
+- correctly NOP any foreign breakpoints
+- no longer write NOP to DLL address space, this might fix random crashes
+- the impossible should no longer happen
+
+r39:
+- closing connection should close the game now, instead of freezing
+- misc bug fixes
+- spectators get player names
+- packetloss during handshake shouldn't result in freezes anymore
+- major rewrite of network related code
+- move source files into src folder
+- add icon
+- add comments to lunaport.ini
+
+r38:
+- another fix for resending of lost input, should work now
+
+r37:
+- fixes for input request/resend code (works now?)
+- adjust network string length, protocol version bump
+
+r36:
+- desync due to lost input packets should be eliminated, lost input is always resent now
+- reduced memory usage
+- reduced required network bandwidth, if no packets are lost
+- check network protocol version of packets before everything else
+- spectator tweaks, protocol version bump
+
+r35:
+- network tweaks, protocol version bump
+
+r34:
+- more major changes and fixes
+- protocol changes, protocol version bump
+- lots of testing
+
+r33:
+- fixes for r32 bugs
+
+r32:
+- major changes to netcode (experimental)
+- protocol changes, protocol version bump
+
+r31:
+- fix bug that could lead to spectator desync in rare cases
+- fix replay playback desyncs after recording a replay
+- fix possible freeze with spectators connecting to host before client
+- add AskSpectate value in lunaport.ini, to allow disabling of spectate question on failed join
+- save player names to replays
+- add --local commandline switch for mode 3, replay recording setting from lunaport.ini is respected
+
+r30:
+- display player names in game title bar (DisplayNames)
+- ask if player wants to spectate, if joining is not possible
+
+r29:
+- rename packaged game.ini so configuration is not so easily overwritten
+- add player names, configurable in lunaport.ini (PlayerName)
+- spectator mode should be fixed for real now
+- improved handshake, bumped protocol version
+- denied spectators should get correct error message now
+
+r28:
+- fixed some compiler warnings
+- actually, spectator mode still didn't work, more fixes
+- no more invalid iterators during spectator cleanup (possible crash)
+- another fix to delay calculation
+- name of game exe is now configurable as GameExe in lunaport.ini (adapted from lunapoton)
+
+r27:
+- spectator mode works now
+- re-enable -O2
+
+r26:
+- another general fix
+
+r25:
+- possible fix for general brokenness
+- fix for spectator mode
+- more debug log information
+- "activate" host's lunaport window on connection
+
+r24:
+- option for input rate display in lunaport.ini (DisplayInputrate)
+- option for FPS display in lunaport.ini (DisplayFramerate)
+- add FPS and input per second display to title bar
+
+r23:
+- remove temporary measurement code
+
+r22:
+- add more debug log information for spectator mode
+- readjust delay calculation once more
+- use measurements
+- added temporary measurement code for inputs/second
+- tweak network constants, bump protocol version
+
+r21:
+- fix to spectator mode
+
+r20:
+- readjust delay calculation (seems better for now)
+
+r19:
+- fix replay recording of single player mode in network game
+- hopefully improved netcode
+- no more -O2
+
+r18:
+- lots of testing
+
+r17:
+- another change for that part, maybe it's better now
+
+r16:
+- fix for netcode bug introduced in r13
+
+r15:
+- add setting for number of stages to lunaport.ini
+- allow host to specify delay
+- smarter user input code
+
+r14:
+- allow configuration of port in lunaport.ini
+- add support for configuration file
+
+r13:
+- lame, experimental lag spike compensation
+- increase initial spectator buffer
+
+r12:
+- quick fix for spectator mode, still experimental
+- enable -O2 for compilation
+
+r11:
+- experimental spectator support
+- improved handshake should eliminate "invalid handshake sequence" on client side due to out-of-order packets
+- bring game window to foreground
+- minor code cleanups
+
+r10:
+- support single player mode for replay recording and network
+
+r9:
+- replay recording and playback added
+
+r8:
+- more fixes for stupid bugs in netcode
+
+r7:
+- protocol version bump
+
+r6:
+- forgot to implement the most important part. oops
+
+r5:
+- hopefully improved netcode
+
+r4:
+- redesign input hooks
+- much more logging, debug output to log
+- no locking for print, temporary "fix" for lockups. what's wrong there?
+
+r3:
+- small fixes
+
+r2:
+- added lots of logging to debug build
+- fixed some small bugs in delay calculation
