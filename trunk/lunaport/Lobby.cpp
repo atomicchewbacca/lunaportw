@@ -26,6 +26,8 @@
 extern void l ();
 extern void u ();
 extern void read_int (int *i);
+extern bool get_esc ();
+extern void play_sound ();
 
 inline bool lt_record(lplobby_record r1, lplobby_record r2)
 {
@@ -61,9 +63,11 @@ Lobby::Lobby ()
 	refresh = 4 * 60;
 	last_input = 1;
 	lobby = NULL;
+	display_comments = 1;
+	play_sounds = 1;
 }
 
-void Lobby::init (char *url, int crc, int size, char *name, char *comment, unsigned short port, int *lobby)
+void Lobby::init (char *url, int crc, int size, char *name, char *comment, unsigned short port, int *lobby, int display_comments, int play_sounds)
 {
 	SECURITY_ATTRIBUTES sa;
 
@@ -80,6 +84,8 @@ void Lobby::init (char *url, int crc, int size, char *name, char *comment, unsig
 	this->refresh = INFINITE;
 	this->last_input = 1;
 	this->state = -1;
+	this->display_comments = display_comments;
+	this->play_sounds = play_sounds;
 
 	ZeroMemory(&sa, sizeof(sa));
 	sa.bInheritHandle = TRUE;
@@ -105,17 +111,18 @@ void Lobby::show_menu ()
 		r = games[i];
 		if (r.state == 0)
 		{
-			printf("%d: '%s' waiting on %s:%u ", i+3, r.name, r.ip, r.port);
+			printf("%d: '%s' waiting on %s:%u ", i+4, r.name, r.ip, r.port);
 		}
 		else
 		{
-			printf("%d: '%s' vs '%s' on %s:%u ", i+3, r.name, r.name2, r.ip, r.port);
+			printf("%d: '%s' vs '%s' on %s:%u ", i+4, r.name, r.name2, r.ip, r.port);
 		}
-		if (r.comment[0])
+		if (r.comment[0] && display_comments)
 			printf("[%s] ", r.comment);
 		printf("(last refresh: %ds)\n", r.refresh);
 	}
-	printf("2: Refresh game list\n"
+	printf("3: Watch lobby\n"
+	       "2: Refresh game list\n"
 		   "1: Display this menu\n"
 		   "0: Exit lobby\n"
 		   "====================\n");
@@ -135,11 +142,11 @@ void Lobby::update_menu (lplobby_head *result)
 		games.push_back(r);
 	}
 	std::stable_sort(games.begin(), games.end(), lt_record);
-	show_menu();
 }
 
 bool Lobby::menu (char *ip, int *port, int *spec)
 {
+	DWORD last, now;
 	bool exit = false, ok = false;
 	int err = 0;
 	int input = 1, old_in = 1;
@@ -151,7 +158,10 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 	strcpy(msg, "Not connected.");
 	err = data_get(lobby_url, kgt_crc, kgt_size, &refresh, &result);
 	if (!err)
+	{
 		update_menu(result);
+		show_menu();
+	}
 	if (result != NULL)
 	{
 		result = NULL;
@@ -196,7 +206,10 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 			err = data_get(lobby_url, kgt_crc, kgt_size, &refresh, &result);
 			old_in = 2;
 			if (!err)
+			{
 				update_menu(result);
+				show_menu();
+			}
 			if (result != NULL)
 			{
 				result = NULL;
@@ -213,15 +226,61 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 			}
 			ReleaseMutex(mutex);
 			break;
+		case 3:
+			old_in = 3;
+			l(); printf("Watching lobby. Hit escape key to stop.\n"); u();
+			last = 0;
+			while (!get_esc())
+			{
+				now = GetTickCount();
+				if (now - refresh * 1000 < last)
+				{
+					Sleep(75);
+					continue;
+				}
+				last = now;
+
+				WaitForSingleObject(mutex, INFINITE);
+				err = data_get(lobby_url, kgt_crc, kgt_size, &refresh, &result);
+				old_in = 2;
+				if (!err)
+				{
+					update_menu(result);
+					if (result->n)
+					{
+						show_menu();
+						l(); printf("Watching lobby. Hit escape key to stop.\n"); u();
+						SetForegroundWindow(FindWindow(NULL, "LunaPort " VERSION));
+						if (play_sounds)
+							play_sound();
+					}
+				}
+				if (result != NULL)
+				{
+					result = NULL;
+					free(result);
+				}
+
+				// handle errors
+				if (err)
+				{
+					l();
+					printf("%s\n", http_error(err));
+					u();
+					return true;
+				}
+				ReleaseMutex(mutex);
+			}
+			break;
 		default:
-			if (input >= 0 && input <= 2 + games.size())
+			if (input >= 0 && input <= 3 + games.size())
 			{
 				WaitForSingleObject(mutex, INFINITE);
 				old_in = input;
-				memcpy(ip, games[input - 3].ip, NET_STRING_LENGTH);
+				memcpy(ip, games[input - 4].ip, NET_STRING_LENGTH);
 				ip[NET_STRING_LENGTH] = 0;
-				*port = games[input - 3].port;
-				*spec = games[input - 3].state == 1;
+				*port = games[input - 4].port;
+				*spec = games[input - 4].state == 1;
 				ok = true;
 				ReleaseMutex(mutex);
 			}

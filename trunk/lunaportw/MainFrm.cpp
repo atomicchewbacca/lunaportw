@@ -8,6 +8,7 @@
 #include "aboutdlg.h"
 #include "lunaportwView.h"
 #include "MainFrm.h"
+#include "SettingDlg.h"
 
 #ifdef DEBUG
 # undef DEBUG
@@ -223,6 +224,16 @@ LRESULT CMainFrame::OnOptAutoDelay(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 	ask_delay = !ask_delay;
 	UISetCheck(ID_OPT_AUTODELAY, !ask_delay);
 	UpdateLayout();
+	return 0;
+}
+
+LRESULT CMainFrame::OnOptSetting(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	CSettingDlg dlg(game_exe, replays_dir);
+	if(IDOK == dlg.DoModal(m_hWnd)) {
+		dlg.GetRefExe(game_exe);
+		dlg.GetRefRep(replays_dir);
+	}
 	return 0;
 }
 
