@@ -58,6 +58,7 @@ extern CLunaportwView *cur_logwin;
 
 extern void l ();
 extern void u ();
+extern void play_sound ();
 extern char *ip2str (unsigned long ip);
 extern void update_history (unsigned int v);
 extern void send_local_input (int v);
@@ -92,7 +93,7 @@ extern bool spec_accept_callback (SOCKADDR_IN peer, luna_packet *packet);
 extern void spectate_game (char *ip_str, int port, int record_replay);
 extern void join_game (char *ip_str, int port, int record_replay);
 extern void ping_thread_loop (unsigned long peer);
-extern void host_game (int seed, int record_replay, int ask_delay);
+//extern void host_game (int seed, int record_replay, int ask_delay);
 extern void print_menu (int record_replay);
 extern UINT CALLBACK ofn_hook (HWND hdlg, UINT msg, WPARAM wparam, LPARAM lparam);
 extern void read_config (unsigned int *port, int *record_replay, int *allow_spectators, unsigned int *max_stages, int *ask_delay,

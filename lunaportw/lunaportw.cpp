@@ -110,6 +110,274 @@ static bool exefile_exists()
 	return ::PathFileExistsA(path) ? true : false;
 }
 
+static void host_game (int seed, int record_replay, int ask_delay)
+{
+	HANDLE alive = NULL, serve_specs = NULL, ping_thread = NULL;
+	SOCKADDR_IN sa;
+	unsigned long peer = 0;
+	luna_packet lp;
+	int i, d, tmp, esc = 0;
+	unsigned int other_stages;
+	DWORD pings = 0;
+
+HOST:
+	alive = NULL; serve_specs = NULL; ping_thread = NULL; peer = 0; esc = 0; pings = 0;
+
+	if (DEBUG) { l(); fprintf(logfile, "Hosting\n"); u(); }
+
+	ZeroMemory(&sa, sizeof(sa));
+	ZeroMemory(&lp, sizeof(lp));
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	sa.sin_family = AF_INET;
+	sa.sin_addr.s_addr = htonl(INADDR_ANY);
+	sa.sin_port = htons(port);
+	if (bind(sock, (SOCKADDR *)&sa, sizeof(sa)))
+	{
+		l(); printf("Couldn't bind socket.\n"); u();
+		return;
+	}
+
+	create_sems();
+
+	conmanager.init(&sock, port, (DefaultCallback)spec_accept_callback);
+	serve_specs = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)serve_spectators, NULL, 0, NULL);
+
+	l(); printf("Waiting for connection to LunaPort...(ESC to abort)\n"); u();
+WAIT:
+	TerminateThread(serve_specs, 0);
+	CloseHandle(serve_specs);
+	max_stages = set_max_stages;
+	blacklist1[0] = 0; blacklist2[0] = 0;
+	stagemanager.init(max_stages);
+	serve_specs = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)serve_spectators, NULL, 0, NULL);
+	conmanager.clear();
+	conmanager.init(&sock, port, (DefaultCallback)spec_accept_callback);
+	p1_name[0] = 0; p2_name[0] = 0;
+	peer = conmanager.accept(peer_receiver, &esc);
+
+	if (esc)
+	{
+		TerminateThread(serve_specs, 0);
+		CloseHandle(serve_specs);
+		max_stages = set_max_stages;
+		blacklist1[0] = 0; blacklist2[0] = 0;
+		stagemanager.init(max_stages);
+		conmanager.clear();
+		bye_spectators();
+		close_sems();
+		closesocket(sock);
+		return;
+	}
+
+	if (peer == 0)
+		goto WAIT;
+
+	local_p = rand() & 1;
+	l(); printf("Establishing connection to %s.\nLocal player %u.\n", ip2str(peer), local_p + 1); u();
+
+	simple_luna_packet(&lp, PACKET_TYPE_PNUM, 0);
+	lp.value = local_p ? 0 : 1;
+	
+	if (!conmanager.send(&lp, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection, no player number.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	simple_luna_packet(&lp, PACKET_TYPE_KGTCH, 0);
+	lp.value = kgt_crc;
+	if (!conmanager.send(&lp, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection, no player number.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	simple_luna_packet(&lp, PACKET_TYPE_KGTLN, 0);
+	lp.value = kgt_size;
+	if (!conmanager.send(&lp, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection, no player number.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	if (!conmanager.receive(&lp, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection, no player number.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	if (!PACKET_IS(lp, PACKET_TYPE_KGTST) || lp.value == 0)
+	{
+		l(); printf("KGT mismatch. Peer is using an incompatible game version.\nWaiting for new connection.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	if (!send_string(own_name, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection, couldn't send name.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	if (!receive_string(local_p ? p1_name : p2_name, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection, couldn't receive name.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	
+	strcpy(local_p ? p2_name : p1_name, own_name);
+	l(); printf("Remote player: %s\n", local_p ? p1_name : p2_name); u();
+
+	simple_luna_packet(&lp, PACKET_TYPE_STAGE, 0);
+	lp.value = max_stages;
+	if (!conmanager.send(&lp, peer) || !conmanager.receive(&lp, peer) || !PACKET_IS(lp, PACKET_TYPE_STAGE) || !send_string(set_blacklist, peer) || !receive_string(local_p ? blacklist1 : blacklist2, peer))
+	{
+		l(); printf("Failed to transmit stage information.\n"); u();
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+	other_stages = lp.value;
+	strcpy(local_p ? blacklist2 : blacklist1, set_blacklist);
+	max_stages = MIN(max_stages, other_stages);
+	stagemanager.init(max_stages);
+	stagemanager.blacklist(blacklist1);
+	stagemanager.blacklist(blacklist2);
+	if (!stagemanager.ok())
+	{
+		l(); printf("After applying blacklists, no stages (of %u) are left.\nLocal blacklist: %s\nRemote blacklist: %s\n", max_stages, set_blacklist, local_p ? blacklist1 : blacklist2); u();
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+
+	simple_luna_packet(&lp, PACKET_TYPE_SEED, 0);
+	lp.value = seed;
+	if (!conmanager.send(&lp, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+
+	do
+	{
+		if (ping_thread != NULL)
+		{
+			terminate_ping_thread = 1;
+			WaitForSingleObject(sem_ping_end, INFINITE);
+			TerminateThread(ping_thread, 0);
+			CloseHandle(ping_thread);
+			ping_thread = NULL;
+		}
+		pings = 0;
+		for (i = 0; i < 10; i++)
+		{
+			tmp = get_ping(peer);
+			if (tmp == -1)
+			{
+				l(); printf("Failure to establish connection, waiting for new connection.\n");
+				conmanager.disconnect(peer);
+				goto WAIT;
+			}
+			pings += tmp;
+		}
+		pings /= 10; // pings/10 = RTT
+		d = (int)(((float)pings + MS_PER_INPUT) * 2.0 / MS_PER_INPUT + SAFETY_DELAY);
+		if (d > 0xff)
+			d = 0xff;
+		if (play_host_sound)
+			play_sound();
+
+		if (ask_delay)
+		{
+			terminate_ping_thread = 0;
+			ping_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ping_thread_loop, (void *)peer, 0, NULL);
+			l(); printf("\nDetermined ping of %ums. This corresponds to an input delay of %u input requests.\nIf you experience heavy lag, try increasing the delay.\nPlease enter delay (0 = ping again)\n", pings, d); u();
+			::SetForegroundWindow(::FindWindowA(NULL, "LunaPort " VERSION));
+			class CDelayDlg : public CDialogImpl<CDelayDlg>
+			{
+			public:
+				enum { IDD = IDD_DELAYBOX };
+
+				CComboBox crtl;
+				int delay;
+
+				CDelayDlg(int delay) : delay(delay) {}
+				// メッセージマップ
+				BEGIN_MSG_MAP(CIpDlg)
+					MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+					COMMAND_ID_HANDLER(IDOK, OnOK)
+				END_MSG_MAP()
+
+				LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+				{
+					// スクリーンの中央に配置
+					CenterWindow();
+
+					// コントロール設定
+					crtl = GetDlgItem(IDC_COMBO1);
+					crtl.AddString(_T("PINGを再測定"));
+					for(int i = 0; i < 255; i++) {
+						wchar_t _w[8];
+						swprintf_s(_w, 8, L"%d", i+1);
+						crtl.AddString(_w);
+					}
+					crtl.SetCurSel(delay);
+
+					return 0;
+				}
+
+				LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+				{
+					delay = crtl.GetCurSel();
+					EndDialog(wID);
+					return 0;
+				}
+			} dlg(d);
+			dlg.DoModal();
+			d = dlg.delay;
+			TerminateThread(ping_thread, 0);
+			CloseHandle(ping_thread);
+			ping_thread = NULL;
+		}
+		else
+		{
+			l(); printf("\nDetermined ping of %ums. This corresponds to an input delay of %u input requests.\n", pings, d); u();
+		}
+	} while (d == 0);
+
+	set_delay(d);
+	simple_luna_packet(&lp, PACKET_TYPE_DELAY, 0);
+	lp.value = PACKET_VALUE_DELAY(delay, pings);
+	if (!conmanager.send(&lp, peer))
+	{
+		l(); printf("Failure to establish connection, waiting for new connection.\n");
+		conmanager.disconnect(peer);
+		goto WAIT;
+	}
+
+	conmanager.set_async(peer);
+	remote_player = peer;
+	proc = NULL;
+	alive = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)keep_alive, (void *)remote_player, 0, NULL);
+	run_game(seed, 1, record_replay, NULL, 0);
+	proc = NULL;
+	conmanager.disconnect(peer);
+	bye_spectators();
+	TerminateThread(alive, 0);
+	CloseHandle(alive);
+	TerminateThread(serve_specs, 0);
+	CloseHandle(serve_specs);
+	conmanager.clear();
+	//clear_socket();
+	close_sems();
+	closesocket(sock);
+
+	l(); printf("Game finished.\n\n"); u();
+
+	if (keep_hosting)
+		goto HOST;
+}
 
 static void _WritePrivateProfileIntA(const char *lpAppName, const char *lpKeyName, int val, const char *lpFileName)
 {
@@ -449,6 +717,7 @@ unsigned int __stdcall lunaport_serve(void *_in)
 	write_replay = NULL;
 	recording_ended = false;
 	max_stages = set_max_stages;
+	printf("Done.\n");
 	return 0;
 }
 
@@ -579,7 +848,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 		return 1;
 	}
 	curl_global_init(CURL_GLOBAL_ALL);
-	lobby.init(lobby_url, kgt_crc, kgt_size, own_name, lobby_comment, port, &lobby_flag, 0, 0);
+	lobby.init(lobby_url, kgt_crc, kgt_size, own_name, lobby_comment, port, &lobby_flag, display_lobby_comments, play_lobby_sound);
 	atexit(unregister_lobby);
 
 	::CreateDirectoryA(replays_dir, NULL);
