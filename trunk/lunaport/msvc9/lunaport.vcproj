@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib comdlg32.lib libcurld.lib wldap32.lib ws2_32.lib shlwapi.lib"
+				AdditionalDependencies="winmm.lib comdlg32.lib libcurld.lib wldap32.lib ws2_32.lib shlwapi.lib zlibd.lib"
 				Version="49b"
 				GenerateDebugInformation="true"
 				SubSystem="1"
@@ -132,7 +132,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="winmm.lib comdlg32.lib libcurl.lib wldap32.lib ws2_32.lib shlwapi.lib"
+				AdditionalDependencies="winmm.lib comdlg32.lib libcurl.lib wldap32.lib ws2_32.lib shlwapi.lib zlib.lib"
 				Version="49b"
 				GenerateDebugInformation="true"
 				SubSystem="1"

@@ -313,7 +313,7 @@ int data_get (char *url, unsigned int kgtcrc, unsigned int kgtsize, int *refresh
 
 	*refresh = response->refresh < 1 ? *refresh : response->refresh;
 	*result = response;
-	records = (rd.size - sizeof(lplobby_head)) / sizeof(lplobby_record);
+	records = rd.size > sizeof(lplobby_head) ? (rd.size - sizeof(lplobby_head)) / sizeof(lplobby_record) : 0;
 	response->n = MIN(response->n, records);
 	response->msg[NET_STRING_LENGTH] = 0;
 	clean_string(response->msg);
