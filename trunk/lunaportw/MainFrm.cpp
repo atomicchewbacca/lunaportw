@@ -8,12 +8,11 @@
 #include "aboutdlg.h"
 #include "lunaportwView.h"
 #include "MainFrm.h"
-#include "SettingDlg.h"
 
 #ifdef DEBUG
 # undef DEBUG
 #endif
-//#include "LunaPort.h"
+#include "LunaPort.h"
 //#include "Code.h"
 #include "ConManager.h"
 #include "Crc32.h"
@@ -22,6 +21,8 @@
 #include "HTTP.h"
 #include "Lobby.h"
 #include "lunaportw.h"
+#include "SettingDlg.h"
+#include "ChooseLangDlg.h"
 
 CMainFrame::CMainFrame() : lunaport_thread(NULL)
 {
@@ -57,7 +58,7 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	// 以前のメニューの削除
 	SetMenu(NULL);
 
-	HWND hWndToolBar = CreateSimpleToolBarCtrl(m_hWnd, IDR_MAINFRAME, FALSE, ATL_SIMPLE_TOOLBAR_PANE_STYLE);
+	HWND hWndToolBar = CreateSimpleToolBarCtrl(m_hWnd, IDR_TOOLBAR, FALSE, ATL_SIMPLE_TOOLBAR_PANE_STYLE);
 
 	CreateSimpleReBar(ATL_SIMPLE_REBAR_NOBORDER_STYLE);
 	AddSimpleReBarBand(hWndCmdBar);
@@ -84,6 +85,9 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	CMenuHandle menuMain = m_CmdBar.GetMenu();
 	m_view.SetWindowMenu(menuMain.GetSubMenu(WINDOW_MENU_POSITION));
 
+	m_LogView.Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
+	m_view.AddPage(m_LogView.m_hWnd, CString(MAKEINTRESOURCE(IDS_LOGWINDOWTITLE)));
+
 	return 0;
 }
 
@@ -107,12 +111,6 @@ LRESULT CMainFrame::OnFileExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 
 LRESULT CMainFrame::OnGameLocal(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - オフラインゲーム"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)5, 0, NULL);
 
@@ -121,12 +119,6 @@ LRESULT CMainFrame::OnGameLocal(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndC
 
 LRESULT CMainFrame::OnGameHost(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - ホスト"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)1, 0, NULL);
 
@@ -135,12 +127,6 @@ LRESULT CMainFrame::OnGameHost(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 
 LRESULT CMainFrame::OnGameJoin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - クライアント"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)2, 0, NULL);
 
@@ -149,12 +135,6 @@ LRESULT CMainFrame::OnGameJoin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 
 LRESULT CMainFrame::OnGameSpectate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - 観戦"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)9, 0, NULL);
 
@@ -163,12 +143,6 @@ LRESULT CMainFrame::OnGameSpectate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 
 LRESULT CMainFrame::OnGameWatchReplay(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - リプレイ再生"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)7, 0, NULL);
 
@@ -177,12 +151,6 @@ LRESULT CMainFrame::OnGameWatchReplay(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 
 LRESULT CMainFrame::OnGameHostOnLobby(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - ロビーホスト接続"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)3, 0, NULL);
 
@@ -191,12 +159,6 @@ LRESULT CMainFrame::OnGameHostOnLobby(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 
 LRESULT CMainFrame::OnGameListLobbyGames(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CLunaportwView* pView = new CLunaportwView;
-	pView->Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
-	m_view.AddPage(pView->m_hWnd, _T("セッションログ - ロビークライアント接続"));
-
-	// TODO: ドキュメント初期化コードの追加
-	pView->Initialize();
 	if(lunaport_thread) ::CloseHandle(lunaport_thread);
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)4, 0, NULL);
 
@@ -229,10 +191,16 @@ LRESULT CMainFrame::OnOptAutoDelay(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 
 LRESULT CMainFrame::OnOptSetting(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	CSettingDlg dlg(game_exe, replays_dir);
+	CSettingDlg dlg(game_exe, replays_dir, own_name, lobby_url, lobby_comment, port);
 	if(IDOK == dlg.DoModal(m_hWnd)) {
 		dlg.GetRefExe(game_exe);
 		dlg.GetRefRep(replays_dir);
+		size_t s;
+		wcstombs_s(&s, own_name, NET_STRING_BUFFER, dlg.player_name, NET_STRING_BUFFER);
+		wcstombs_s(&s, lobby_url, NET_STRING_BUFFER, dlg.lobby_url, NET_STRING_BUFFER);
+		wcstombs_s(&s, lobby_comment, NET_STRING_BUFFER, dlg.lobby_comment, NET_STRING_BUFFER);
+		port = dlg.port;
+		CChooseLangDlg::cur_language_id = dlg.chosen_language_id;
 	}
 	return 0;
 }
@@ -267,18 +235,18 @@ LRESULT CMainFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 
 LRESULT CMainFrame::OnWindowClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	int nActivePage = m_view.GetActivePage();
+	/*int nActivePage = m_view.GetActivePage();
 	if(nActivePage != -1)
 		m_view.RemovePage(nActivePage);
 	else
-		::MessageBeep((UINT)-1);
+		::MessageBeep((UINT)-1);*/
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	m_view.RemoveAllPages();
+	//m_view.RemoveAllPages();
 
 	return 0;
 }

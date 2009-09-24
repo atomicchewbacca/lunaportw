@@ -13,10 +13,9 @@ public:
 
 	BOOL PreTranslateMessage(MSG* pMsg);
 
-	void Initialize();
-
 	BEGIN_MSG_MAP(CLunaportwView)
-		//MESSAGE_HANDLER(WM_CREATE, OnCreate)
+		MESSAGE_HANDLER(WM_CREATE, OnCreate)
+		MESSAGE_HANDLER(WM_CLOSE, OnClose)
 	END_MSG_MAP()
 
 	// ハンドラーのプロトタイプ （引数が必要な場合はコメントを外してください）:
@@ -25,4 +24,5 @@ public:
 	//LRESULT NotifyHandler(int /*idCtrl*/, LPNMHDR /*pnmh*/, BOOL& /*bHandled*/)
 
 	LRESULT OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
+	LRESULT OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 };

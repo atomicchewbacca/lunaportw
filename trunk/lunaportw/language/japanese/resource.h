@@ -8,7 +8,6 @@
 #define IDD_IPBOX                               135
 #define IDD_SPECTATE                            136
 #define IDD_SETTING                             137
-#define IDD_CHOOSELANG                          138
 #define IDR_TOOLBAR                             141
 #define IDC_IPADDRESS1                          1001
 #define IDC_REFEXE_BUTTON                       1001

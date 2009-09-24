@@ -8,10 +8,20 @@ public:
 
 	CEdit ref_exe;
 	CEdit ref_rep;
+	CEdit player_name_crtl;
+	CEdit port_number_crtl;
+	CEdit lobby_url_crtl;
+	CEdit lobby_comment_crtl;
+	CComboBox language_crtl;
 	wchar_t exe_path[_MAX_PATH];
 	wchar_t rep_path[_MAX_PATH];
+	wchar_t player_name[NET_STRING_BUFFER];
+	wchar_t lobby_url[NET_STRING_BUFFER];
+	wchar_t lobby_comment[NET_STRING_BUFFER];
+	unsigned int port;
+	int chosen_language_id;
 
-	CSettingDlg(const char *exe_path, const char *rep_path);
+	CSettingDlg(const char *exe_path, const char *rep_path, const char *player_name, const char *lobby_url, const char *lobby_comment, unsigned int port);
 	void GetRefExe(char *exe_path);
 	void GetRefRep(char *rep_path);
 
@@ -24,31 +34,9 @@ public:
 		COMMAND_ID_HANDLER(IDC_REFREP_BUTTON, OnRefRep)
 	END_MSG_MAP()
 
-	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-	{
-		// スクリーンの中央に配置
-		CenterWindow();
+	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
 
-		// コントロール設定
-		ref_exe = GetDlgItem(IDC_REFEXE_EDIT);
-		ref_exe.LimitText(_MAX_PATH);
-		ref_exe.SetSelAll();
-		ref_exe.ReplaceSel(exe_path);
-		ref_rep = GetDlgItem(IDC_REFREP_EDIT);
-		ref_rep.LimitText(_MAX_PATH);
-		ref_rep.SetSelAll();
-		ref_rep.ReplaceSel(rep_path);
-
-		return 0;
-	}
-
-	LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-	{
-		ref_exe.GetLine(0, exe_path, _MAX_PATH);
-		ref_rep.GetLine(0, rep_path, _MAX_PATH);
-		EndDialog(wID);
-		return 0;
-	}
+	LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
 	LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
