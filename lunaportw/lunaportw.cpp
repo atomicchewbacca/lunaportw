@@ -1,5 +1,5 @@
 /* LunaPort is a Vanguard Princess netplay application
- * Copyright (C) 2009 by Anonymous
+ * Copyright (C) 2009 by Anonymous, 俺
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include "aboutdlg.h"
 #include "MainFrm.h"
 #include "SettingDlg.h"
+#include "ChooseLangDlg.h"
 
 #include "lunaportw.h"
 
@@ -304,7 +305,7 @@ WAIT:
 
 				CDelayDlg(int delay) : delay(delay) {}
 				// メッセージマップ
-				BEGIN_MSG_MAP(CIpDlg)
+				BEGIN_MSG_MAP(CDelayDlg)
 					MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 					COMMAND_ID_HANDLER(IDOK, OnOK)
 				END_MSG_MAP()
@@ -416,6 +417,12 @@ static void save_config(int max_points, int keep_session_log, const char *sessio
 	::WritePrivateProfileStringA("LunaPort", "Lobby", lobby_url, config_filename);
 	::WritePrivateProfileStringA("LunaPort", "LobbyComment", lobby_comment, config_filename);
 	::WritePrivateProfileStringA("LunaPort", "Sound", sound, config_filename);
+	{
+		char langname[256];
+		size_t t;
+		::wcstombs_s(&t, langname, 256, CChooseLangDlg::CurrentLanguage(), _TRUNCATE);
+		::WritePrivateProfileStringA("LunaPort", "Language", langname, config_filename);
+	}
 }
 
 int record_replay, ask_delay;
@@ -611,7 +618,7 @@ unsigned int __stdcall lunaport_serve(void *_in)
 			class CIpDlg : public CDialogImpl<CIpDlg>
 			{
 			public:
-				enum { IDD = IDD_IPBOX };
+				enum { IDD = IDD_SPECTATE };
 
 				CIPAddressCtrl ip_crtl;
 				CEdit port_crtl;
@@ -631,10 +638,7 @@ unsigned int __stdcall lunaport_serve(void *_in)
 					// スクリーンの中央に配置
 					CenterWindow();
 
-					SetWindowText(_T("Spectate"));
 					// コントロール設定
-					CStatic text = GetDlgItem(IDC_STATIC);
-					text.SetWindowText(_T("観戦先のIPとポート番号を入力してください"));
 					ip_crtl = GetDlgItem(IDC_IPADDRESS1);
 					ip_crtl.SetAddress(addr);
 					port_crtl = GetDlgItem(IDC_EDIT1);
@@ -818,17 +822,44 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	}
 	else _getcwd(dir_prefix, _MAX_PATH);
 
+
+	CChooseLangDlg::ListUpLanguage();
+	{
+		char config_filename[_MAX_PATH];
+		strcpy(config_filename, dir_prefix);
+		strcat(config_filename, "\\"INIFILE);
+		char lang[256];
+		::GetPrivateProfileStringA("LunaPort", "Language", "", lang, 256-1, config_filename);
+		if(strcmp(lang, "") == 0) {
+			CChooseLangDlg dlg;
+			dlg.DoModal();
+			CChooseLangDlg::ChangeLanguage(dlg.ChosenLanguage());
+		}
+		else {
+			_TCHAR _lang[256];
+			size_t t;
+			const char *str = lang;
+			::mbsrtowcs_s(&t, _lang, 256, &str, _TRUNCATE, 0);
+			CChooseLangDlg::ChangeLanguage(_lang);
+		}
+	}
 	read_config(&port, &record_replay, &allow_spectators, &set_max_stages, &ask_delay, &ask_spectate, &display_framerate,
 	            &display_inputrate, &display_names, game_exe, own_name, set_blacklist, &blacklist_local, &check_exe,
 				&max_points, &keep_session_log, session_log, lobby_url, lobby_comment, &display_lobby_comments,
 				&keep_hosting, sound, &play_host_sound, &play_lobby_sound, replays_dir);
 	while(!exefile_exists()) {
-		::MessageBox(NULL, _T("ゲームの実行ファイルが見つかりませんでした。\nファイルの位置を設定してください"), _T("LunaPortW Error."), MB_OK | MB_ICONERROR);
-		CSettingDlg dlg(game_exe, replays_dir);
+		::MessageBox(NULL, CString(MAKEINTRESOURCE(IDS_SPECIFYEXE)), _T("LunaPortW Error."), MB_OK | MB_ICONERROR);
+		CSettingDlg dlg(game_exe, replays_dir, own_name, lobby_url, lobby_comment, port);
 		if(IDCANCEL == dlg.DoModal()) break;
 		else {
 			dlg.GetRefExe(game_exe);
 			dlg.GetRefRep(replays_dir);
+			size_t s;
+			wcstombs_s(&s, own_name, NET_STRING_BUFFER, dlg.player_name, NET_STRING_BUFFER);
+			wcstombs_s(&s, lobby_url, NET_STRING_BUFFER, dlg.lobby_url, NET_STRING_BUFFER);
+			wcstombs_s(&s, lobby_comment, NET_STRING_BUFFER, dlg.lobby_comment, NET_STRING_BUFFER);
+			port = dlg.port;
+			CChooseLangDlg::cur_language_id = dlg.chosen_language_id;
 		}
 	}
 	if(!::PathFileExistsA(INIFILE)) {

@@ -17,6 +17,7 @@ public:
 
 	CTabView m_view;
 	CCommandBarCtrl m_CmdBar;
+	CLunaportwView m_LogView;
 	HANDLE lunaport_thread;
 
 	virtual BOOL PreTranslateMessage(MSG* pMsg);

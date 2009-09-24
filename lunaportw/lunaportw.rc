@@ -12,7 +12,7 @@
 //
 // Toolbar resources
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 IDR_MAINFRAME TOOLBAR 16, 15
 {
     BUTTON      ID_GAME_LOCAL
@@ -23,6 +23,24 @@ IDR_MAINFRAME TOOLBAR 16, 15
     BUTTON      ID_GAME_HOSTONLOBBY
     BUTTON      ID_GAME_LISTLOBBYGAMES
     SEPARATOR
+    BUTTON      ID_OPT_SETTING
+    BUTTON      ID_APP_ABOUT
+}
+
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDR_TOOLBAR TOOLBAR 32, 32
+{
+    BUTTON      ID_GAME_LOCAL
+    BUTTON      ID_GAME_HOST
+    BUTTON      ID_GAME_JOIN
+    BUTTON      ID_GAME_SPECTATE
+    BUTTON      ID_GAME_WATCHREPLAY
+    BUTTON      ID_GAME_HOSTONLOBBY
+    BUTTON      ID_GAME_LISTLOBBYGAMES
+    SEPARATOR
+    BUTTON      ID_OPT_SETTING
     BUTTON      ID_APP_ABOUT
 }
 
@@ -31,51 +49,55 @@ IDR_MAINFRAME TOOLBAR 16, 15
 //
 // Bitmap resources
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
-IDR_MAINFRAME      BITMAP         "res\\Toolbar.bmp"
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDR_MAINFRAME      BITMAP         ".\\res\\toolicon.bmp"
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDR_TOOLBAR        BITMAP         ".\\res\\Toolbar.bmp"
 
 
 
 //
 // Menu resources
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 IDR_MAINFRAME MENU
 {
-    POPUP "LunaPort(&L)"
+    POPUP "&LunaPort"
     {
-        MENUITEM "オフラインでゲームする\tCtrl+N(&N)", ID_GAME_LOCAL
-        MENUITEM "ホストする\tCtrl+H(&H)", ID_GAME_HOST
-        MENUITEM "凸する...\tCtrl+J(&J)", ID_GAME_JOIN
-        MENUITEM "観戦する...\tCtrl+S(&S)", ID_GAME_SPECTATE
-        MENUITEM "リプレイ観賞...\tCtrl+O(&O)", ID_GAME_WATCHREPLAY
+        MENUITEM "Local game with ra&ndom stages in vs mode\tCtrl+N", ID_GAME_LOCAL
+        MENUITEM "&Host Game\tCtrl+H", ID_GAME_HOST
+        MENUITEM "&Join Game...\tCtrl+J", ID_GAME_JOIN
+        MENUITEM "&Spectate...\tCtrl+S", ID_GAME_SPECTATE
+        MENUITEM "&Open Replay file...\tCtrl+&O", ID_GAME_WATCHREPLAY
         MENUITEM SEPARATOR
-        MENUITEM "ロビーでホスト(&R)", ID_GAME_HOSTONLOBBY
-        MENUITEM "ホスト一覧取得(&L)", ID_GAME_LISTLOBBYGAMES
+        MENUITEM "Host game on lo&bby", ID_GAME_HOSTONLOBBY
+        MENUITEM "&List lobby games", ID_GAME_LISTLOBBYGAMES
         MENUITEM SEPARATOR
-        MENUITEM "アプリケーションの終了(&X)", ID_APP_EXIT
+        MENUITEM "E&xit", ID_APP_EXIT
     }
-    POPUP "オプション(&O)"
+    POPUP "&Option"
     {
-        MENUITEM "リプレイ保存(&R)", ID_OPT_REPLAYRECORDING
-        MENUITEM "観戦許可(&A)", ID_OPT_ALLOWSPECTATOR
-        MENUITEM "自動でディレイ設定(&A)", ID_OPT_AUTODELAY
+        MENUITEM "&Replay recording", ID_OPT_REPLAYRECORDING
+        MENUITEM "&Spectators accept", ID_OPT_ALLOWSPECTATOR
+        MENUITEM "&Auto delay setting", ID_OPT_AUTODELAY
         MENUITEM SEPARATOR
-        MENUITEM "設定...\tCrtl+P(&P)", ID_OPT_SETTING
+        MENUITEM "&Preference...\tCrtl+P", ID_OPT_SETTING
     }
-    POPUP "表示(&V)"
+    POPUP "&View"
     {
-        MENUITEM "ツールバー(&T)", ID_VIEW_TOOLBAR
-        MENUITEM "ステータスバー(&S)", ID_VIEW_STATUS_BAR
+        MENUITEM "&Toolbar", ID_VIEW_TOOLBAR
+        MENUITEM "&Status Bar", ID_VIEW_STATUS_BAR
     }
-    POPUP "ウィンドウ(&W)"
+    POPUP "&Window"
     {
-        MENUITEM "閉じる\tCtrl+F4(&C)", ID_WINDOW_CLOSE
-        MENUITEM "すべて閉じる(&A)", ID_WINDOW_CLOSE_ALL
+        MENUITEM "&Close\tCtrl+F4", ID_WINDOW_CLOSE
+        MENUITEM "Close &All", ID_WINDOW_CLOSE_ALL
     }
-    POPUP "ヘルプ(&H)"
+    POPUP "&Help"
     {
-        MENUITEM "バージョン情報 LunaPortW(&A)...", ID_APP_ABOUT
+        MENUITEM "&About LunaPortW...", ID_APP_ABOUT
     }
 }
 
@@ -85,61 +107,100 @@ IDR_MAINFRAME MENU
 // Dialog resources
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
-IDD_ABOUTBOX DIALOG 0, 0, 187, 102
+IDD_ABOUTBOX DIALOG 0, 0, 187, 122
 STYLE DS_MODALFRAME | DS_SETFONT | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP | WS_SYSMENU
-CAPTION "バージョン情報 lunaportw"
-FONT 9, "MS UI Gothic"
+CAPTION "About"
+FONT 8, "MS Sans Serif"
 {
-    DEFPUSHBUTTON   "OK", IDOK, 130, 81, 50, 14
-    CTEXT           "LunaPortW v1.0\n\n(c) Copyright 2009", IDC_STATIC, 25, 57, 78, 32, SS_CENTER
-    ICON            IDR_MAINFRAME, IDC_STATIC, 55, 26, 18, 21, SS_ICON
-    GROUPBOX        "", IDC_STATIC, 7, 7, 115, 88
+    DEFPUSHBUTTON   "OK", IDOK, 130, 101, 50, 14
+    CTEXT           "LunaPortW v1.0.2\n\n(c) Copyright 2009", IDC_STATIC, 52, 39, 78, 32, SS_CENTER
+    ICON            IDR_MAINFRAME, IDC_STATIC, 81, 14, 21, 20, SS_ICON
+    GROUPBOX        "", IDC_STATIC, 7, 7, 173, 72
+    LTEXT           "Toolbar Icon from http://pixel-mixer.com", IDC_STATIC, 7, 86, 137, 8, SS_LEFT
 }
 
 
 
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDD_CHOOSELANG DIALOG 0, 0, 134, 47
+STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_VISIBLE | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP | WS_SYSMENU
+CAPTION "Choose Language"
+FONT 8, "Ms Shell Dlg 2"
+{
+    DEFPUSHBUTTON   "OK", IDOK, 77, 26, 50, 14
+    COMBOBOX        IDC_COMBO1, 8, 7, 119, 15, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+}
+
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 IDD_DELAYBOX DIALOG 0, 0, 186, 56
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_VISIBLE | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP | WS_SYSMENU
-CAPTION "ディレイ設定"
+CAPTION "Delay"
 FONT 8, "Ms Shell Dlg 2"
 {
     DEFPUSHBUTTON   "OK", IDOK, 129, 7, 50, 14
-    LTEXT           "ディレイを決定してください", IDC_STATIC, 7, 7, 116, 15, SS_LEFT
-    COMBOBOX        IDC_COMBO1, 27, 31, 67, 12, WS_VSCROLL | CBS_DROPDOWN | CBS_HASSTRINGS
+    LTEXT           "Specify delay", IDC_STATIC, 7, 7, 116, 15, SS_LEFT
+    COMBOBOX        IDC_COMBO1, 27, 31, 67, 12, WS_VSCROLL | CBS_DROPDOWNLIST | CBS_HASSTRINGS
 }
 
 
 
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 IDD_IPBOX DIALOG 0, 0, 186, 78
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_VISIBLE | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP | WS_SYSMENU
 CAPTION "Join Game"
 FONT 8, "Ms Shell Dlg 2"
 {
     DEFPUSHBUTTON   "OK", IDOK, 124, 57, 50, 14
-    PUSHBUTTON      "キャンセル", IDCANCEL, 69, 57, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 69, 57, 50, 14
     CONTROL         "", IDC_IPADDRESS1, WC_IPADDRESS, WS_TABSTOP, 7, 25, 98, 13
     EDITTEXT        IDC_EDIT1, 111, 25, 45, 13, ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "対戦相手のIPとポート番号を入力してください", IDC_STATIC, 8, 7, 146, 16, SS_LEFT
+    LTEXT           "Specify remote player's IP and port number.", IDC_STATIC, 8, 7, 146, 16, SS_LEFT
 }
 
 
 
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
-IDD_SETTING DIALOG 0, 0, 186, 95
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDD_SETTING DIALOG 0, 0, 187, 213
 STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_VISIBLE | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP | WS_SYSMENU
-CAPTION "設定"
+CAPTION "Setting"
 FONT 8, "Ms Shell Dlg 2"
 {
-    DEFPUSHBUTTON   "OK", IDOK, 129, 74, 50, 14
-    PUSHBUTTON      "キャンセル", IDCANCEL, 73, 74, 50, 14
-    GROUPBOX        "リプレイ保存フォルダ", IDC_STATIC, 7, 42, 171, 26
+    DEFPUSHBUTTON   "OK", IDOK, 130, 192, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 79, 192, 50, 14
+    GROUPBOX        "Replay Folder", IDC_STATIC, 7, 42, 171, 26
     EDITTEXT        IDC_REFEXE_EDIT, 9, 18, 146, 14, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
     PUSHBUTTON      "...", IDC_REFEXE_BUTTON, 156, 18, 21, 14
-    GROUPBOX        "ゲームの実行ファイル", IDC_STATIC, 7, 7, 171, 32
+    GROUPBOX        "Path of executable", IDC_STATIC, 7, 7, 171, 32
     EDITTEXT        IDC_REFREP_EDIT, 9, 51, 146, 14, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
     PUSHBUTTON      "...", IDC_REFREP_BUTTON, 156, 51, 21, 14
+    EDITTEXT        IDC_EDIT_PNAME, 7, 82, 112, 13, ES_AUTOHSCROLL
+    LTEXT           "Player Name", IDC_STATIC, 7, 71, 54, 10, SS_LEFT
+    COMBOBOX        IDC_COMBO_LANG, 7, 110, 78, 14, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    LTEXT           "Language(Changes apply next executing)", IDC_STATIC, 7, 98, 135, 8, SS_LEFT
+    EDITTEXT        IDC_EDIT_PORT, 127, 82, 53, 13, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Port", IDC_STATIC, 127, 70, 46, 10, SS_LEFT
+    GROUPBOX        "Lobby", IDC_STATIC, 7, 128, 174, 62
+    EDITTEXT        IDC_EDIT_LOBBYURL, 11, 150, 166, 13, ES_AUTOHSCROLL
+    LTEXT           "URL", IDC_STATIC, 12, 140, 84, 10, SS_LEFT
+    EDITTEXT        IDC_EDIT_LOBBYCOMMENT, 11, 174, 166, 13, ES_AUTOHSCROLL
+    LTEXT           "Comment", IDC_STATIC, 12, 164, 84, 10, SS_LEFT
+}
+
+
+
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDD_SPECTATE DIALOG 0, 0, 186, 78
+STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_VISIBLE | WS_BORDER | WS_CAPTION | WS_DLGFRAME | WS_POPUP | WS_SYSMENU
+CAPTION "Spectate"
+FONT 8, "Ms Shell Dlg 2"
+{
+    DEFPUSHBUTTON   "OK", IDOK, 124, 57, 50, 14
+    PUSHBUTTON      "Cancel", IDCANCEL, 69, 57, 50, 14
+    CONTROL         "", IDC_IPADDRESS1, WC_IPADDRESS, WS_TABSTOP, 7, 25, 98, 13
+    EDITTEXT        IDC_EDIT1, 111, 25, 45, 13, ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Specify remote player's IP and  port number.", IDC_STATIC, 8, 7, 146, 16, SS_LEFT
 }
 
 
@@ -147,56 +208,58 @@ FONT 8, "Ms Shell Dlg 2"
 //
 // String Table resources
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 STRINGTABLE
 {
     IDR_MAINFRAME                 "LunaPortW"
-    ID_GAME_LOCAL                 "オフラインでゲームを開始します\nオフラインで起動"
-    ID_GAME_HOST                  "ホストを開始して対戦相手を待ちます\nホストする"
-    ID_GAME_JOIN                  "既存のホストに対戦を申し込みます\n凸する"
-    ID_GAME_SPECTATE              "対戦中の相手を指定して観戦します\n観戦する"
-    ID_GAME_WATCHREPLAY           "リプレイファイルを開き再生します\nリプレイ観賞"
-    ID_GAME_HOSTONLOBBY           "ロビーサーバーに登録し、ホストします\nロビーでホスト"
-    ID_GAME_LISTLOBBYGAMES        "ロビーサーバーからホストの一覧を取得します\nホスト一覧"
-    ID_OPT_SETTING                "実行ファイルのパス、リプレイ保存フォルダの指定を変更できます\n設定編集"
-    ID_OPT_REPLAYRECORDING        "リプレイを記録・保存します\nリプレイ記録"
-    ID_OPT_ALLOWSPECTATOR         "観戦を許可します\n観戦を許可"
-    ID_OPT_AUTODELAY              "ディレイを自動的に設定します\nディレイ自動設定"
-    ID_APP_ABOUT                  "プログラム情報、バージョン、著作権を表示\nバージョン情報"
-    ID_APP_EXIT                   "アプリケーションを終了し、ファイルの保存を指示\n終了"
-    ID_NEXT_PANE                  "次のウィンドウに切り替える\n次のペイン"
-    ID_PREV_PANE                  "前のウィンドウに切り替える\n前のペイン"
-    ID_WINDOW_NEW                 "作業中のウィンドウを複写して表示\n新規ウィンドウ"
-    ID_WINDOW_ARRANGE             "ウィンドウの下部にアイコンを整列\nアイコンの整列"
-    ID_WINDOW_CASCADE             "ウィンドウを重ねて表示\n重ねて表示"
-    ID_WINDOW_TILE_HORZ           "ウィンドウを並べて表示\n並べて表示"
-    ID_WINDOW_TILE_VERT           "ウィンドウを並べて表示\n並べて表示"
-    ID_WINDOW_SPLIT               "作業中のウィンドウを分割\n分割"
-    ID_EDIT_CLEAR                 "選択範囲を消去\n消去"
-    ID_EDIT_CLEAR_ALL             "すべて消去\nすべて消去"
-    ID_EDIT_COPY                  "選択範囲をコピーしてクリップボードに保存\n保存"
-    ID_EDIT_CUT                   "選択範囲を切り取ってクリップボードに保存\n切り取り"
-    ID_EDIT_FIND                  "指定した文字列の検索\n検索"
-    ID_EDIT_PASTE                 "クリップボードの内容を貼り付け\n貼り付け"
-    ID_EDIT_REPEAT                "直前に行った動作を繰り返す\n繰り返し"
-    ID_EDIT_REPLACE               "指定した文字列を他の文字列で置換\n置換"
-    ID_EDIT_SELECT_ALL            "ファイル内のすべてを選択\nすべて選択"
-    ID_EDIT_UNDO                  "直前に行った動作を元に戻す\n元に戻す"
-    ID_EDIT_REDO                  "取り消した操作をやり直す\nやり直す"
-    ID_VIEW_TOOLBAR               "ツールバーの 表示/非表示\nツールバーの表示切り替え"
-    ID_VIEW_STATUS_BAR            "ステータスバーの 表示/非表示\nステータスバーの表示切り替え"
-    ATL_IDS_SCSIZE                "ウィンドウのサイズを変更"
-    ATL_IDS_SCMOVE                "ウィンドウの位置を変更"
-    ATL_IDS_SCMINIMIZE            "ウィンドウを最小化する"
-    ATL_IDS_SCMAXIMIZE            "ウィンドウを最大化する"
-    ATL_IDS_SCNEXTWINDOW          "次のウィンドウに切り替える"
-    ATL_IDS_SCPREVWINDOW          "前のウィンドウに切り替える"
-    ATL_IDS_SCCLOSE               "作業中のウィンドウを閉じ、変更したファイルの保存を指示"
-    ATL_IDS_SCRESTORE             "ウィンドウを通常のサイズに戻す"
-    ATL_IDS_SCTASKLIST            "タスク一覧をアクティブにする"
-    ATL_IDS_MDICHILD              "ウィンドウをアクティブにする"
-    ATL_IDS_IDLEMESSAGE           "レディ"
-    ATL_IDS_MRU_FILE              "指定のファイルを開く"
+    ID_GAME_LOCAL                 "Local game with random stages in vs mode\nLocal game"
+    ID_GAME_HOST                  "Host game and wait for remote player.\nHost game"
+    ID_GAME_JOIN                  "Join game\nJoin game"
+    ID_GAME_SPECTATE              "Spectate\nSpectate"
+    ID_GAME_WATCHREPLAY           "Open and play Replay file\nWatch replay"
+    ID_GAME_HOSTONLOBBY           "Host game on lobby\nHost game on lobby"
+    ID_GAME_LISTLOBBYGAMES        "List lobby games\nList lobby games"
+    ID_OPT_SETTING                "Change application's prerefence\nPrerefence"
+    ID_OPT_REPLAYRECORDING        "Toggle replay recording\nToggle replay recording"
+    ID_OPT_ALLOWSPECTATOR         "Toggle spectators\nToggle spectators"
+    ID_OPT_AUTODELAY              "Toggle auto delay\nToggle auto delay"
+    ID_APP_ABOUT                  "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT                   "Quit the application; prompts to save documents\nExit"
+    ID_NEXT_PANE                  "Switch to the next window pane\nNext Pane"
+    ID_PREV_PANE                  "Switch back to the previous window pane\nPrevious Pane"
+    ID_WINDOW_NEW                 "Open another window for the active document\nNew Window"
+    ID_WINDOW_ARRANGE             "Arrange icons at the bottom of the window\nArrange Icons"
+    ID_WINDOW_CASCADE             "Arrange windows so they overlap\nCascade Windows"
+    ID_WINDOW_TILE_HORZ           "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_TILE_VERT           "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_SPLIT               "Split the active window into panes\nSplit"
+    ID_EDIT_CLEAR                 "Erase the selection\nErase"
+    ID_EDIT_CLEAR_ALL             "Erase everything\nErase All"
+    ID_EDIT_COPY                  "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_CUT                   "Cut the selection and put it on the Clipboard\nCut"
+    ID_EDIT_FIND                  "Find the specified text\nFind"
+    ID_EDIT_PASTE                 "Insert Clipboard contents\nPaste"
+    ID_EDIT_REPEAT                "Repeat the last action\nRepeat"
+    ID_EDIT_REPLACE               "Replace specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL            "Select the entire document\nSelect All"
+    ID_EDIT_UNDO                  "Undo the last action\nUndo"
+    ID_EDIT_REDO                  "Redo the previously undone action\nRedo"
+    ID_VIEW_TOOLBAR               "Show or hide the toolbar\nToggle ToolBar"
+    ID_VIEW_STATUS_BAR            "Show or hide the status bar\nToggle StatusBar"
+    ATL_IDS_SCSIZE                "Change the window size"
+    ATL_IDS_SCMOVE                "Change the window position"
+    ATL_IDS_SCMINIMIZE            "Reduce the window to an icon"
+    ATL_IDS_SCMAXIMIZE            "Enlarge the window to full size"
+    ATL_IDS_SCNEXTWINDOW          "Switch to the next document window"
+    ATL_IDS_SCPREVWINDOW          "Switch to the previous document window"
+    ATL_IDS_SCCLOSE               "Close the active window and prompts to save the documents"
+    ATL_IDS_SCRESTORE             "Restore the window to normal size"
+    ATL_IDS_SCTASKLIST            "Activate Task List"
+    ATL_IDS_MDICHILD              "Activate this window"
+    ATL_IDS_IDLEMESSAGE           "Ready"
+    ATL_IDS_MRU_FILE              "Open this document"
+    IDS_SPECIFYEXE                "Cannot find game exe.\nPlease choose the game exe file."
+    IDS_LOGWINDOWTITLE            "Log"
 }
 
 
@@ -204,7 +267,7 @@ STRINGTABLE
 //
 // Accelerator resources
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 IDR_MAINFRAME ACCELERATORS
 {
     "N",            ID_GAME_LOCAL, VIRTKEY, CONTROL
@@ -230,18 +293,48 @@ IDR_MAINFRAME ACCELERATORS
 //
 // Icon resources
 //
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
-IDR_MAINFRAME      ICON           "res\\lunaportw.ico"
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+IDR_MAINFRAME      ICON           ".\\res\\lunaportw.ico"
 
 
 
 //
 // Version Information resources
 //
+LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
+VS_VERSION_INFO VERSIONINFO
+    FILEVERSION     1,0,0,2
+    PRODUCTVERSION  1,0,0,2
+    FILEOS          VOS__WINDOWS32
+    FILETYPE        VFT_DLL
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "ffbeffff"
+        {
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "\0"
+            VALUE "FileDescription", "LunaPort GUI version\0"
+            VALUE "FileVersion", "1.0.0.2\0"
+            VALUE "InternalName", "lunaportw\0"
+            VALUE "LegalCopyright", "Copyright (C) 2009 Anonymous, ore.  All rights reserved.\0"
+            VALUE "OriginalFilename", "lunaportw.exe\0"
+            VALUE "ProductName", "LunaPortW\0"
+            VALUE "ProductVersion", "1.0.0.2\0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 65470, 65535
+    }
+}
+
+
+
 LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION     1,0,0,1
-    PRODUCTVERSION  1,0,0,1
+    FILEVERSION     1,0,0,2
+    PRODUCTVERSION  1,0,0,2
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_DLL
 {
@@ -252,12 +345,12 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "Comments", "スゲノすげーのー\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "LunaPort GUI版\0"
-            VALUE "FileVersion", "1.0.0.1\0"
+            VALUE "FileVersion", "1.0.0.2\0"
             VALUE "InternalName", "lunaportw\0"
             VALUE "LegalCopyright", "Copyright (C) 2009 Anonymous, 俺.  All rights reserved.\0"
             VALUE "OriginalFilename", "lunaportw.exe\0"
             VALUE "ProductName", "LunaPortW\0"
-            VALUE "ProductVersion", "1.0.0.1\0"
+            VALUE "ProductVersion", "1.0.0.2\0"
         }
     }
     BLOCK "VarFileInfo"
