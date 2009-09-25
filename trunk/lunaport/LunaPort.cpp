@@ -95,6 +95,7 @@ ConManager conmanager;
 StageManager stagemanager;
 Session session;
 Lobby lobby;
+bool force_esc = false;
 
 void l () { /*WaitForSingleObject(mutex_print, INFINITE);*/ } // l() to lock print mutex
 void u () { /*ReleaseMutex(mutex_print);*/ } // u() to unlock print mutex
