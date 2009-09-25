@@ -159,6 +159,7 @@
 				AdditionalDependencies="winmm.lib comdlg32.lib libcurl.lib wldap32.lib ws2_32.lib shlwapi.lib zlib.lib"
 				OutputFile="$(ProjectDir)$(ProjectName).exe"
 				LinkIncremental="1"
+				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
 			/>
@@ -241,6 +242,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\HostListView.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\lunaport\HTTP.cpp"
 				>
 				<FileConfiguration
@@ -261,29 +266,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\lunaport\Lobby.cpp"
+				RelativePath=".\Lobby.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						UndefinePreprocessorDefinitions="_UNICODE;UNICODE"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="0"
-						UndefinePreprocessorDefinitions="_UNICODE;UNICODE"
-					/>
-				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\lunaport\LunaPort.cpp"
+				RelativePath=".\LunaPort.cpp"
 				>
 				<FileConfiguration
 					Name="Debug|Win32"
@@ -406,11 +393,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HostListView.h"
+				>
+			</File>
+			<File
 				RelativePath="..\lunaport\HTTP.h"
 				>
 			</File>
 			<File
-				RelativePath="..\lunaport\Lobby.h"
+				RelativePath=".\Lobby.h"
 				>
 			</File>
 			<File

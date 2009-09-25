@@ -26,9 +26,12 @@ extern FILE *logfile;
 extern void l ();
 extern void u ();
 extern char *ip2str(unsigned long ip);
+extern bool force_esc;
 
 bool get_esc ()
 {
+	if(force_esc) return true;
+
 	HWND hwnd;
 	DWORD pid;
 

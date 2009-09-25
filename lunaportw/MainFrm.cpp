@@ -7,6 +7,7 @@
 
 #include "aboutdlg.h"
 #include "lunaportwView.h"
+#include "HostListView.h"
 #include "MainFrm.h"
 
 #ifdef DEBUG
@@ -20,18 +21,10 @@
 #include "Session.h"
 #include "HTTP.h"
 #include "Lobby.h"
+
 #include "lunaportw.h"
 #include "SettingDlg.h"
 #include "ChooseLangDlg.h"
-
-CMainFrame::CMainFrame() : lunaport_thread(NULL)
-{
-}
-
-CMainFrame::~CMainFrame()
-{
-	if(lunaport_thread) CloseHandle(lunaport_thread);
-}
 
 BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
 {
@@ -85,8 +78,13 @@ LRESULT CMainFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/
 	CMenuHandle menuMain = m_CmdBar.GetMenu();
 	m_view.SetWindowMenu(menuMain.GetSubMenu(WINDOW_MENU_POSITION));
 
-	m_LogView.Create(m_view, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL | ES_SAVESEL, WS_EX_CLIENTEDGE);
+	m_LogView.Create(m_view, rcDefault, NULL,
+        WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_HSCROLL | WS_VSCROLL |
+		ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_NOHIDESEL,
+		WS_EX_CLIENTEDGE);
 	m_view.AddPage(m_LogView.m_hWnd, CString(MAKEINTRESOURCE(IDS_LOGWINDOWTITLE)));
+
+	m_view.m_tab.SetFocus();
 
 	return 0;
 }
@@ -111,56 +109,149 @@ LRESULT CMainFrame::OnFileExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 
 LRESULT CMainFrame::OnGameLocal(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)5, 0, NULL);
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+			m_view.SetActivePage(i);
+			break;
+		}
+	}
+
+	do_lunaport(5);
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnGameHost(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)1, 0, NULL);
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+			m_view.SetActivePage(i);
+			break;
+		}
+	}
+
+	do_lunaport(1);
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnGameJoin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)2, 0, NULL);
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+			m_view.SetActivePage(i);
+			break;
+		}
+	}
+
+	do_lunaport(2);
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnGameSpectate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)9, 0, NULL);
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+			m_view.SetActivePage(i);
+			break;
+		}
+	}
+
+	do_lunaport(9);
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnGameWatchReplay(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)7, 0, NULL);
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+			m_view.SetActivePage(i);
+			break;
+		}
+	}
+
+	do_lunaport(7);
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnGameHostOnLobby(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)3, 0, NULL);
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+			m_view.SetActivePage(i);
+			break;
+		}
+	}
+
+	do_lunaport(3);
 
 	return 0;
 }
 
 LRESULT CMainFrame::OnGameListLobbyGames(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	if(lunaport_thread) ::CloseHandle(lunaport_thread);
-	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_serve, (void *)4, 0, NULL);
+	if(!m_LobbyView.IsWindow()) {
+		m_LobbyView.Create(m_view, rcDefault, NULL,
+				WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | 
+				LVS_SINGLESEL | LVS_REPORT | LVS_SHOWSELALWAYS,
+				WS_EX_CLIENTEDGE);
+		m_view.AddPage(m_LobbyView.m_hWnd, CString(MAKEINTRESOURCE(IDS_LOBBYWINDOWTITLE)) + CString(lobby_url));
+		m_LobbyView.refresh();
+	}
+	else {
+		for(int i = 0; i < m_view.GetPageCount(); i++) {
+			if(m_view.GetPageHWND(i) == m_LobbyView.m_hWnd) {
+				m_view.SetActivePage(i);
+				m_LobbyView.refresh();
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+LRESULT CMainFrame::OnLobbyJoin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	wchar_t *str = NULL;
+	if(m_LobbyView.GetSelectedIndex() >= 0 && m_LobbyView.GetItemText(m_LobbyView.GetSelectedIndex(), 1, str) && str) {
+		for(int i = 0; i < m_view.GetPageCount(); i++) {
+			if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+				m_view.SetActivePage(i);
+				break;
+			}
+		}
+
+		char ip_str[256];
+		size_t t;
+		::wcstombs_s(&t, ip_str, 256, str, wcslen(str));
+		set_lunaport_param(ip_str, 0);
+		do_lunaport(4);
+	}
+
+	return 0;
+}
+
+LRESULT CMainFrame::OnLobbySpectate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	wchar_t *str = NULL;
+	if(m_LobbyView.GetSelectedIndex() >= 0 && m_LobbyView.GetItemText(m_LobbyView.GetSelectedIndex(), 1, str) && str) {
+		for(int i = 0; i < m_view.GetPageCount(); i++) {
+			if(m_view.GetPageHWND(i) == m_LogView.m_hWnd) {
+				m_view.SetActivePage(i);
+				break;
+			}
+		}
+
+		char ip_str[256];
+		size_t t;
+		::wcstombs_s(&t, ip_str, 256, str, wcslen(str));
+		set_lunaport_param(ip_str, 1);
+		do_lunaport(4);
+	}
 
 	return 0;
 }
@@ -235,11 +326,11 @@ LRESULT CMainFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 
 LRESULT CMainFrame::OnWindowClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	/*int nActivePage = m_view.GetActivePage();
-	if(nActivePage != -1)
+	int nActivePage = m_view.GetActivePage();
+	if(nActivePage != -1 && m_view.GetPageHWND(nActivePage) != m_LogView.m_hWnd)
 		m_view.RemovePage(nActivePage);
 	else
-		::MessageBeep((UINT)-1);*/
+		::MessageBeep((UINT)-1);
 
 	return 0;
 }
@@ -247,6 +338,9 @@ LRESULT CMainFrame::OnWindowClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 LRESULT CMainFrame::OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	//m_view.RemoveAllPages();
+	for(int i = 0; i < m_view.GetPageCount(); i++) {
+		if(m_view.GetPageHWND(i) != m_LogView.m_hWnd) m_view.RemovePage(i);
+	}
 
 	return 0;
 }

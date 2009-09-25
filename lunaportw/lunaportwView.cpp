@@ -6,6 +6,9 @@
 #include "resource.h"
 
 #include "lunaportwView.h"
+#ifdef DEBUG
+# undef DEBUG
+#endif
 #include "LunaPort.h"
 
 extern CRITICAL_SECTION cur_logwin_monitor;
@@ -18,23 +21,24 @@ CLunaportwView::~CLunaportwView()
 	::LeaveCriticalSection(&cur_logwin_monitor);
 }
 
-LRESULT CLunaportwView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+LRESULT CLunaportwView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 {
 	SetFont(AtlGetDefaultGuiFont());
 	SetReadOnly();
-	HideCaret();
-	InsertText(-1, _T("Lunaport ")_T(VERSION)_T("\n"));
+	AppendText(_T("Lunaport ")_T(VERSION)_T("\n"));
 	::EnterCriticalSection(&cur_logwin_monitor);
 	cur_logwin = this;
 	::LeaveCriticalSection(&cur_logwin_monitor);
+	bHandled = FALSE;
 	return 0;
 }
 
-LRESULT CLunaportwView::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+LRESULT CLunaportwView::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 {
 	::EnterCriticalSection(&cur_logwin_monitor);
 	if(cur_logwin == this) cur_logwin = NULL;
 	::LeaveCriticalSection(&cur_logwin_monitor);
+	bHandled = FALSE;
 	return 0;
 }
 
