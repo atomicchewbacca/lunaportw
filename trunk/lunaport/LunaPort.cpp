@@ -2705,7 +2705,6 @@ bool inifile_exists(const char *argv0)
 	return ::PathFileExists(_path) ? true : false;
 }
 
-#if !defined _MSC_VER || defined _CONSOLE
 int main(int argc, char* argv[])
 {
 	WSADATA wsa;
@@ -2997,4 +2996,3 @@ int main(int argc, char* argv[])
 
 	return 0;
 }
-#endif

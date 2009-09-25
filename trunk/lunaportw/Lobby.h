@@ -28,7 +28,6 @@ class Lobby
 	private:
 		char msg[NET_STRING_BUFFER];
 		char *lobby_url, *own_name, *name, *name2, *comment;
-		std::vector<lplobby_record> games; // ordered list of games received from the server
 		HANDLE refresher;                  // resend requests to lobby server 
 		HANDLE mutex;
 		HANDLE sem_refresh;
@@ -44,12 +43,13 @@ class Lobby
 		int *lobby;                        // pointer to lobby flag, should be updated as necessary, 0 = no connection, 1 = connected as host
 
 		void update_menu (lplobby_head *result);
-		void show_menu ();
 
 	public:
+		std::vector<lplobby_record> games; // ordered list of games received from the server
+
 		Lobby ();
 		void init (char *url, int crc, int size, char *name, char *comment, unsigned short port, int *lobby, int display_comments, int play_sounds);
-		bool menu (char *ip, int *port, int *spec);
+		bool loadgamelist ();
 		void host ();
 		void run (char *name, char *name2);
 		void disconnect ();                 // data_del and terminate refresher

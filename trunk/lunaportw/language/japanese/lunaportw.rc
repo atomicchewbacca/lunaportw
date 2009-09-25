@@ -103,6 +103,19 @@ IDR_MAINFRAME MENU
 
 
 
+LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+IDR_LOBBY_POPUP MENU
+{
+    POPUP "ロビー"
+    {
+        MENUITEM "凸する", ID_LOBBY_JOIN
+        MENUITEM "観戦", ID_LOBBY_SPEC
+        MENUITEM "Ping計測", ID_LOBBY_PING, GRAYED, INACTIVE
+    }
+}
+
+
+
 //
 // Dialog resources
 //
@@ -157,18 +170,18 @@ FONT 9, "MS UI Gothic"
 {
     DEFPUSHBUTTON   "OK", IDOK, 130, 192, 50, 14
     PUSHBUTTON      "キャンセル", IDCANCEL, 79, 192, 50, 14
-    GROUPBOX        "リプレイ保存フォルダ", IDC_STATIC, 7, 42, 171, 26
-    EDITTEXT        IDC_REFEXE_EDIT, 9, 18, 146, 14, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
+    GROUPBOX        "リプレイ保存フォルダ", IDC_STATIC, 7, 42, 173, 26
+    EDITTEXT        IDC_REFEXE_EDIT, 10, 18, 143, 14, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
     PUSHBUTTON      "...", IDC_REFEXE_BUTTON, 156, 18, 21, 14
-    GROUPBOX        "ゲームの実行ファイル", IDC_STATIC, 7, 7, 171, 32
-    EDITTEXT        IDC_REFREP_EDIT, 9, 51, 146, 14, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
+    GROUPBOX        "ゲームの実行ファイル", IDC_STATIC, 7, 7, 173, 32
+    EDITTEXT        IDC_REFREP_EDIT, 10, 51, 143, 14, ES_AUTOHSCROLL, WS_EX_ACCEPTFILES
     PUSHBUTTON      "...", IDC_REFREP_BUTTON, 156, 51, 21, 14
     EDITTEXT        IDC_EDIT_PNAME, 7, 82, 112, 13, ES_AUTOHSCROLL
     LTEXT           "プレイヤー名", IDC_STATIC, 7, 71, 54, 10, SS_LEFT
     COMBOBOX        IDC_COMBO_LANG, 7, 110, 78, 14, CBS_DROPDOWNLIST | CBS_HASSTRINGS
     LTEXT           "UI言語(次回起動時に反映)", IDC_STATIC, 7, 98, 135, 8, SS_LEFT
     EDITTEXT        IDC_EDIT_PORT, 127, 82, 53, 13, ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "ポート番号", IDC_STATIC, 130, 72, 43, 10, SS_LEFT
+    LTEXT           "ポート番号", IDC_STATIC, 128, 72, 43, 10, SS_LEFT
     GROUPBOX        "ロビー設定", IDC_STATIC, 7, 128, 174, 62
     LTEXT           "URL", IDC_STATIC, 12, 140, 84, 10, SS_LEFT
     EDITTEXT        IDC_EDIT_LOBBYURL, 11, 150, 166, 13, ES_AUTOHSCROLL
@@ -248,6 +261,15 @@ STRINGTABLE
     ATL_IDS_MRU_FILE              "指定のファイルを開く"
     IDS_SPECIFYEXE                "ゲームの実行ファイルが見つかりませんでした。\nファイルの位置を設定してください。"
     IDS_LOGWINDOWTITLE            "ログメッセージ"
+    IDS_LOBBYWINDOWTITLE          "ホスト一覧 - "
+    IDS_LOBBYCOL_NAME             "プレイヤー名"
+    IDS_LOBBYCOL_IPADDR           "IPアドレス"
+    IDS_LOBBYCOL_STATUS           "状態"
+    IDS_LOBBYCOL_COMMENT          "コメント"
+    IDS_PLAYERSTATUS_UNKNOWN      "不明"
+    IDS_PLAYERSTATUS_WAITING      "募集中"
+    IDS_PLAYERSTATUS_PLAYING      "対戦中"
+    IDS_PLAYERSTATUS_BUSY         "ビジー"
 }
 
 

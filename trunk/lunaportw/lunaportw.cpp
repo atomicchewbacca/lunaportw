@@ -33,8 +33,9 @@
 #include "Lobby.h"
 
 #include "lunaportwView.h"
-#include "aboutdlg.h"
+#include "HostListView.h"
 #include "MainFrm.h"
+#include "aboutdlg.h"
 #include "SettingDlg.h"
 #include "ChooseLangDlg.h"
 
@@ -68,7 +69,8 @@ int __log_printf(const char *fmt, ...)
 				}
 			}
 		}
-		cur_logwin->InsertText(-1, tmp);
+		cur_logwin->AppendText(tmp);
+		cur_logwin->HideCaret();
 		free(tmp);
 	}
 	::LeaveCriticalSection(&cur_logwin_monitor);
@@ -439,16 +441,57 @@ static char session_log[_MAX_PATH];
 static bool exit_lobby = false;
 static int lobby_port, lobby_spec;
 
-unsigned int __stdcall lunaport_serve(void *_in)
+
+static HANDLE lunaport_thread = NULL;
+static HANDLE old_lunaport_thread = NULL;
+static unsigned int __stdcall lunaport_thfunc(void *_in)
 {
 	int in = (int)_in;
+	if(old_lunaport_thread) {
+		force_esc = true;
+		DWORD code;
+		if(::GetExitCodeThread(old_lunaport_thread, &code) && code == STILL_ACTIVE) {
+			HWND game_window = ::FindWindow(L"KGT2KGAME", NULL);
+			if(game_window) ::PostMessage(game_window, WM_CLOSE, 0, 0);
+			int i = 0;
+			while(i++ < 100 && ::GetExitCodeThread(old_lunaport_thread, &code) && code == STILL_ACTIVE) ::Sleep(30);
+		}
+		if(::GetExitCodeThread(old_lunaport_thread, &code) && code == STILL_ACTIVE) {
+			::TerminateThread(old_lunaport_thread, 2);
+			::Sleep(30);
+			if (game_history != NULL)
+			{
+				free(game_history);
+				game_history = NULL;
+				game_history_pos = 0;
+				spec_pos = 0;
+			}
+			ResetEvent(event_running);
+			ResetEvent(event_waiting);
+			spectators.clear();
+			p1_name[0] = 0;
+			p2_name[0] = 0;
+			blacklist1[0] = 0;
+			blacklist2[0] = 0;
+			write_replay = NULL;
+			recording_ended = false;
+			max_stages = set_max_stages;
+			ReleaseMutex(mutex_history);
+		}
+		::CloseHandle(old_lunaport_thread);
+		old_lunaport_thread = NULL;
+	}
+	force_esc = false;
+
 	switch (in)
 	{
 	case 1:
+		printf("Host Game.\n");
 		SetEvent(event_waiting);
 		host_game((rand()<<16) + rand(), record_replay, ask_delay);
 		break;
 	case 2:
+		printf("Join Game.\n");
 		do {
 			class CIpDlg : public CDialogImpl<CIpDlg>
 			{
@@ -529,13 +572,14 @@ unsigned int __stdcall lunaport_serve(void *_in)
 		join_game(ip_str, port, record_replay);
 		break;
 	case 3:
+		printf("Host Game on lobby.\n");
 		SetEvent(event_waiting);
 		lobby.host();
 		host_game((rand()<<16) + rand(), record_replay, ask_delay);
 		lobby.disconnect();
 		break;
 	case 4:
-		exit_lobby = false;
+		/*exit_lobby = false;
 		do
 		{
 			exit_lobby = lobby.menu(ip_str, &lobby_port, &lobby_spec);
@@ -552,9 +596,24 @@ unsigned int __stdcall lunaport_serve(void *_in)
 				else
 					spectate_game(ip_str, lobby_port, record_replay);
 			}
-		} while (!exit_lobby);
+		} while (!exit_lobby);*/
+		if (inet_addr(ip_str) == INADDR_NONE || inet_addr(ip_str) == 0)
+		{
+			l(); printf("Invalid IP: %s\n", ip_str); u();
+			break;
+		}
+		SetEvent(event_waiting);
+		if (!lobby_spec) {
+			printf("Join Game on lobby.\n");
+			join_game(ip_str, lobby_port, record_replay);
+		}
+		else {
+			printf("Spectate Game on lobby.\n");
+			spectate_game(ip_str, lobby_port, record_replay);
+		}
 		break;
 	case 5:
+		printf("Local Game.\n");
 		SetEvent(event_waiting);
 		if (blacklist_local)
 			stagemanager.blacklist(set_blacklist);
@@ -578,6 +637,7 @@ unsigned int __stdcall lunaport_serve(void *_in)
 		}
 		break;
 	case 7:
+		printf("Watch Replay.\n");
 		ZeroMemory(&ofn, sizeof(ofn));
 		ZeroMemory(filename, _MAX_PATH);
 		ofn.hwndOwner = GetForegroundWindow();
@@ -614,6 +674,7 @@ unsigned int __stdcall lunaport_serve(void *_in)
 		}
 		break;
 	case 9:
+		printf("Spectate.\n");
 		do {
 			class CIpDlg : public CDialogImpl<CIpDlg>
 			{
@@ -723,6 +784,18 @@ unsigned int __stdcall lunaport_serve(void *_in)
 	max_stages = set_max_stages;
 	printf("Done.\n");
 	return 0;
+}
+
+void do_lunaport(int i)
+{
+	old_lunaport_thread = lunaport_thread;
+	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_thfunc, (void *)i, 0, NULL);
+}
+
+void set_lunaport_param(const char *_ip_str, int _lobby_spec)
+{
+	strcpy(ip_str, _ip_str);
+	lobby_spec = _lobby_spec;
 }
 
 CAppModule _Module;
@@ -885,6 +958,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	::CreateDirectoryA(replays_dir, NULL);
 
 	int nRet = Run(lpstrCmdLine, nCmdShow);
+	
+	if (lobby_flag)
+	{
+		int refresh = 0;
+		data_del(lobby_url, kgt_crc, kgt_size, port, &refresh);
+		lobby.disconnect();
+	}
 
 	save_config(max_points, keep_session_log, session_log);
 	WSACleanup();

@@ -15,11 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "stdafx.h"
 #ifdef _MSC_VER
 #pragma warning (disable : 4786)
 #endif
 
 #include <algorithm>
+#ifdef DEBUG
+# undef DEBUG
+#endif
 #include "HTTP.h"
 #include "Lobby.h"
 
@@ -28,6 +32,7 @@ extern void u ();
 extern void read_int (int *i);
 extern bool get_esc ();
 extern void play_sound ();
+extern int __log_printf(const char *fmt, ...);
 
 inline bool lt_record(lplobby_record r1, lplobby_record r2)
 {
@@ -100,35 +105,6 @@ void Lobby::init (char *url, int crc, int size, char *name, char *comment, unsig
 		*lobby = 0;
 }
 
-void Lobby::show_menu ()
-{
-	lplobby_record r;
-	l();
-	printf("Lobby: %s\n"
-	       "====================\n", msg);
-	for (int i = games.size() - 1; i >= 0; i--)
-	{
-		r = games[i];
-		if (r.state == 0)
-		{
-			printf("%d: '%s' waiting on %s:%u ", i+4, r.name, r.ip, r.port);
-		}
-		else
-		{
-			printf("%d: '%s' vs '%s' on %s:%u ", i+4, r.name, r.name2, r.ip, r.port);
-		}
-		if (r.comment[0] && display_comments)
-			printf("[%s] ", r.comment);
-		printf("(last refresh: %ds)\n", r.refresh);
-	}
-	printf("3: Watch lobby\n"
-	       "2: Refresh game list\n"
-		   "1: Display this menu\n"
-		   "0: Exit lobby\n"
-		   "====================\n");
-	u();
-}
-
 void Lobby::update_menu (lplobby_head *result)
 {
 	lplobby_record r;
@@ -136,7 +112,7 @@ void Lobby::update_menu (lplobby_head *result)
 	games.clear();
 	if (result == NULL)
 		return;
-	for (int i = 0; i < result->n; i++)
+	for (unsigned int i = 0; i < result->n; i++)
 	{
 		r = result->records[i];
 		games.push_back(r);
@@ -144,12 +120,9 @@ void Lobby::update_menu (lplobby_head *result)
 	std::stable_sort(games.begin(), games.end(), lt_record);
 }
 
-bool Lobby::menu (char *ip, int *port, int *spec)
+bool Lobby::loadgamelist()
 {
-	DWORD last, now;
-	bool exit = false, ok = false;
 	int err = 0;
-	int input = 1, old_in = 1;
 	lplobby_head *result = NULL;
 
 	// receive initial game list
@@ -160,7 +133,6 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 	if (!err)
 	{
 		update_menu(result);
-		show_menu();
 	}
 	if (result != NULL)
 	{
@@ -173,127 +145,13 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 	{
 		ReleaseMutex(mutex);
 		l();
-		printf("%s\n", http_error(err));
+		__log_printf("%s\n", http_error(err));
 		u();
-		return true;
+		return false;
 	}
 
-	// do not set up background receiver
-	if (refresher == NULL)
-		refresher = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)run_refresher, (void *)this, 0, NULL);
-	type = -1;
-	ReleaseSemaphore(sem_refresh, 1, NULL);
-	if (lobby != NULL)
-		*lobby = 0;
 	ReleaseMutex(mutex);
-
-	do
-	{
-		read_int(&input);
-		switch (input)
-		{
-		case 0:
-			exit = 1;
-			old_in = 0;
-			ok = true;
-			break;
-		case 1:
-			show_menu();
-			old_in = 1;
-			break;
-		case 2:
-			WaitForSingleObject(mutex, INFINITE);
-			err = data_get(lobby_url, kgt_crc, kgt_size, &refresh, &result);
-			old_in = 2;
-			if (!err)
-			{
-				update_menu(result);
-				show_menu();
-			}
-			if (result != NULL)
-			{
-				result = NULL;
-				free(result);
-			}
-
-			// handle errors
-			if (err)
-			{
-				l();
-				printf("%s\n", http_error(err));
-				u();
-				return true;
-			}
-			ReleaseMutex(mutex);
-			break;
-		case 3:
-			old_in = 3;
-			l(); printf("Watching lobby. Hit escape key to stop.\n"); u();
-			last = 0;
-			while (!get_esc())
-			{
-				now = GetTickCount();
-				if (now - refresh * 1000 < last)
-				{
-					Sleep(75);
-					continue;
-				}
-				last = now;
-
-				WaitForSingleObject(mutex, INFINITE);
-				err = data_get(lobby_url, kgt_crc, kgt_size, &refresh, &result);
-				old_in = 2;
-				if (!err)
-				{
-					update_menu(result);
-					if (result->n)
-					{
-						show_menu();
-						l(); printf("Watching lobby. Hit escape key to stop.\n"); u();
-						SetForegroundWindow(FindWindow(NULL, "LunaPort " VERSION));
-						if (play_sounds)
-							play_sound();
-					}
-				}
-				if (result != NULL)
-				{
-					result = NULL;
-					free(result);
-				}
-
-				// handle errors
-				if (err)
-				{
-					l();
-					printf("%s\n", http_error(err));
-					u();
-					return true;
-				}
-				ReleaseMutex(mutex);
-			}
-			break;
-		default:
-			if (input >= 0 && input <= 3 + games.size())
-			{
-				WaitForSingleObject(mutex, INFINITE);
-				old_in = input;
-				memcpy(ip, games[input - 4].ip, NET_STRING_LENGTH);
-				ip[NET_STRING_LENGTH] = 0;
-				*port = games[input - 4].port;
-				*spec = games[input - 4].state == 1;
-				ok = true;
-				ReleaseMutex(mutex);
-			}
-			else
-			{
-				l(); printf("Unknown menu item: %d\n", input); u();
-				input = old_in;
-			}
-
-		}
-	} while (!ok);
-
-	return exit;
+	return true;
 }
 
 void Lobby::host ()
@@ -370,7 +228,7 @@ void Lobby::refresher_thread ()
 		if (err)
 		{
 			l();
-			printf("Lobby disabled: %s\n", http_error(err));
+			__log_printf("Lobby disabled: %s\n", http_error(err));
 			u();
 			refresher = NULL;
 			ReleaseMutex(mutex);

@@ -12,13 +12,11 @@ class CMainFrame : public CFrameWindowImpl<CMainFrame>, public CUpdateUI<CMainFr
 public:
 	DECLARE_FRAME_WND_CLASS(NULL, IDR_MAINFRAME)
 
-	CMainFrame();
-	~CMainFrame();
-
+	CMainFrame() : m_LobbyView(*this) {}
 	CTabView m_view;
 	CCommandBarCtrl m_CmdBar;
 	CLunaportwView m_LogView;
-	HANDLE lunaport_thread;
+	CHostListView m_LobbyView;
 
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual BOOL OnIdle();
@@ -46,6 +44,8 @@ public:
 		COMMAND_ID_HANDLER(ID_OPT_ALLOWSPECTATOR, OnOptAllowSpectator)
 		COMMAND_ID_HANDLER(ID_OPT_AUTODELAY, OnOptAutoDelay)
 		COMMAND_ID_HANDLER(ID_OPT_SETTING, OnOptSetting)
+		COMMAND_ID_HANDLER(ID_LOBBY_JOIN, OnLobbyJoin)
+		COMMAND_ID_HANDLER(ID_LOBBY_SPEC, OnLobbySpectate)
 		COMMAND_ID_HANDLER(ID_VIEW_TOOLBAR, OnViewToolBar)
 		COMMAND_ID_HANDLER(ID_VIEW_STATUS_BAR, OnViewStatusBar)
 		COMMAND_ID_HANDLER(ID_APP_ABOUT, OnAppAbout)
@@ -54,6 +54,7 @@ public:
 		COMMAND_RANGE_HANDLER(ID_WINDOW_TABFIRST, ID_WINDOW_TABLAST, OnWindowActivate)
 		CHAIN_MSG_MAP(CUpdateUI<CMainFrame>)
 		CHAIN_MSG_MAP(CFrameWindowImpl<CMainFrame>)
+		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
 	// ハンドラーのプロトタイプ （引数が必要な場合はコメントを外してください）:
@@ -81,4 +82,6 @@ public:
 	LRESULT OnWindowClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnWindowActivate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnLobbyJoin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnLobbySpectate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 };

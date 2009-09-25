@@ -51,6 +51,7 @@ extern ConManager conmanager;
 extern StageManager stagemanager;
 extern Session session;
 extern Lobby lobby;
+extern bool force_esc;
 
 extern int record_replay, ask_delay;
 
@@ -105,4 +106,5 @@ extern void calc_crcs ();
 extern void unregister_lobby ();
 extern bool inifile_exists(const char *argv0);
 
-extern unsigned int __stdcall lunaport_serve(void *_in);
+void do_lunaport(int i);
+void set_lunaport_param(const char *_ip_str, int _lobby_spec);

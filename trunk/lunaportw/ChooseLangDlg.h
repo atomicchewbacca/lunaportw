@@ -23,7 +23,7 @@ public:
 	const _TCHAR *ChosenLanguage();
 
 	// メッセージマップ
-	BEGIN_MSG_MAP(CSettingDlg)
+	BEGIN_MSG_MAP(CChooseLangDlg)
 		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
 		COMMAND_ID_HANDLER(IDOK, OnOK)
 	END_MSG_MAP()
