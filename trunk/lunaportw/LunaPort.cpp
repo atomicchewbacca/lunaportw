@@ -675,18 +675,23 @@ bool replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int 
 void set_caption (void *p);
 void send_foreground ();
 void spec_handshake (unsigned long peer);
+enum SmallTaskMessage {
+	STM_SETCAPTION = WM_USER,
+	STM_SENDFOREGROUND,
+	STM_SPECHANDSHAKE
+};
 DWORD WINAPI small_task_thread_proc(LPVOID)
 {
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0) > 0) {
 		switch(msg.message) {
-		case WM_USER+0:
+		case STM_SETCAPTION:
 			set_caption((char *)msg.wParam);
 			break;
-		case WM_USER+1:
+		case STM_SENDFOREGROUND:
 			send_foreground();
 			break;
-		case WM_USER+2:
+		case STM_SPECHANDSHAKE:
 			spec_handshake((unsigned long)msg.wParam);
 			break;
 		}
@@ -1134,7 +1139,7 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 						strcat(title_base, p2_name);
 						strcpy(window_title, title_base);
 						//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
-						PostThreadMessage(small_task_thread_id, WM_USER+0, (WPARAM)window_title, 0);
+						PostThreadMessage(small_task_thread_id, STM_SETCAPTION, (WPARAM)window_title, 0);
 					}
 					WriteProcessMemory(proc, (void *)TITLE_BREAK, title_break_bak, sizeof(title_break_bak), NULL); // reset old code
 					FlushInstructionCache(proc, NULL, 0); // shouldn't hurt
@@ -1176,7 +1181,7 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 						}
 						if (display_framerate || display_inputrate || record_replay == -1)
 							//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
-							PostThreadMessage(small_task_thread_id, WM_USER+0, (WPARAM)window_title, 0);
+							PostThreadMessage(small_task_thread_id, STM_SETCAPTION, (WPARAM)window_title, 0);
 						frames = 0;
 						inputs = 0;
 						last_sec = now;
@@ -1386,7 +1391,7 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 				}
 
 				//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)send_foreground, (void *)NULL, 0, NULL);
-				PostThreadMessage(small_task_thread_id, WM_USER+1, 0, 0);
+				PostThreadMessage(small_task_thread_id, STM_SENDFOREGROUND, 0, 0);
 			}
 			break;
 
@@ -1944,7 +1949,7 @@ bool spec_accept_callback (SOCKADDR_IN peer, luna_packet *packet)
 
 	conmanager.rereceive(peer.sin_addr.s_addr, packet);
 	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)spec_handshake, (void *)peer.sin_addr.s_addr, 0, NULL);
-	PostThreadMessage(small_task_thread_id, WM_USER+2, (WPARAM)peer.sin_addr.s_addr, 0);
+	PostThreadMessage(small_task_thread_id, STM_SPECHANDSHAKE, (WPARAM)peer.sin_addr.s_addr, 0);
 	return true;
 }
 
