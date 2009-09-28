@@ -319,7 +319,7 @@ WAIT:
 
 					// コントロール設定
 					crtl = GetDlgItem(IDC_COMBO1);
-					crtl.AddString(_T("PINGを再測定"));
+					crtl.AddString(CString(MAKEINTRESOURCE(IDS_REPING)));
 					for(int i = 0; i < 255; i++) {
 						wchar_t _w[8];
 						swprintf_s(_w, 8, L"%d", i+1);
@@ -492,84 +492,90 @@ static unsigned int __stdcall lunaport_thfunc(void *_in)
 		break;
 	case 2:
 		printf("Join Game.\n");
-		do {
-			class CIpDlg : public CDialogImpl<CIpDlg>
-			{
-			public:
-				enum { IDD = IDD_IPBOX };
-
-				CIPAddressCtrl ip_crtl;
-				CEdit port_crtl;
-				DWORD addr;
-				WORD port;
-
-				CIpDlg(DWORD addr, WORD port) : addr(addr), port(port) {}
-				// メッセージマップ
-				BEGIN_MSG_MAP(CIpDlg)
-					MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-					COMMAND_ID_HANDLER(IDOK, OnOK)
-					COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
-				END_MSG_MAP()
-
-				LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-				{
-					// スクリーンの中央に配置
-					CenterWindow();
-
-					// コントロール設定
-					ip_crtl = GetDlgItem(IDC_IPADDRESS1);
-					ip_crtl.SetAddress(addr);
-					port_crtl = GetDlgItem(IDC_EDIT1);
-					wchar_t _w[8];
-					swprintf_s(_w, 8, L"%d", port);
-					port_crtl.AppendText(_w);
-
-					return 0;
-				}
-
-				LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-				{
-					ip_crtl.GetAddress(&addr);
-					wchar_t _w[8];
-					port_crtl.GetLine(0, _w, 8);
-					port = _wtoi(_w);
-					EndDialog(wID);
-					return 0;
-				}
-
-				LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-				{
-					EndDialog(wID);
-					return 0;
-				}
-			} dlg((strlen(ip_str) > 0 && get_ip_from_ipstr(ip_str) != INADDR_NONE) ? htonl(get_ip_from_ipstr(ip_str)) : MAKEIPADDRESS(192, 168, 1, 1), get_port_from_ipstr(ip_str, port));
-			if(IDOK == dlg.DoModal()) {
-				strcpy(tmp, ip2str(htonl(dlg.addr)));
-				char _w[8];
-				sprintf_s(_w, 8, "%d", dlg.port);
-				strcat(tmp, ":");
-				strcat(tmp, _w);
-				if (strlen(tmp))
-				{
-					if (get_ip_from_ipstr(tmp) == INADDR_NONE || get_ip_from_ipstr(tmp) == 0)
-					{
-						l(); printf("Invalid IP: %s\n", tmp); u();
-					}
-					else {
-						strcpy(ip_str, tmp);
-						break;
-					}
-				}
-			}
-			else break;
-		} while(true);
-		if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
 		{
-			l(); printf("Invalid IP: %s\n", ip_str); u();
-			break;
+			bool ok = false;
+			do {
+				class CIpDlg : public CDialogImpl<CIpDlg>
+				{
+				public:
+					enum { IDD = IDD_IPBOX };
+
+					CIPAddressCtrl ip_crtl;
+					CEdit port_crtl;
+					DWORD addr;
+					WORD port;
+
+					CIpDlg(DWORD addr, WORD port) : addr(addr), port(port) {}
+					// メッセージマップ
+					BEGIN_MSG_MAP(CIpDlg)
+						MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+						COMMAND_ID_HANDLER(IDOK, OnOK)
+						COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
+					END_MSG_MAP()
+
+					LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+					{
+						// スクリーンの中央に配置
+						CenterWindow();
+
+						// コントロール設定
+						ip_crtl = GetDlgItem(IDC_IPADDRESS1);
+						ip_crtl.SetAddress(addr);
+						port_crtl = GetDlgItem(IDC_EDIT1);
+						wchar_t _w[8];
+						swprintf_s(_w, 8, L"%d", port);
+						port_crtl.AppendText(_w);
+
+						return 0;
+					}
+
+					LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+					{
+						ip_crtl.GetAddress(&addr);
+						wchar_t _w[8];
+						port_crtl.GetLine(0, _w, 8);
+						port = _wtoi(_w);
+						EndDialog(wID);
+						return 0;
+					}
+
+					LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+					{
+						EndDialog(wID);
+						return 0;
+					}
+				} dlg((strlen(ip_str) > 0 && get_ip_from_ipstr(ip_str) != INADDR_NONE) ? htonl(get_ip_from_ipstr(ip_str)) : MAKEIPADDRESS(192, 168, 1, 1), get_port_from_ipstr(ip_str, port));
+				if(IDOK == dlg.DoModal()) {
+					strcpy(tmp, ip2str(htonl(dlg.addr)));
+					char _w[8];
+					sprintf_s(_w, 8, "%d", dlg.port);
+					strcat(tmp, ":");
+					strcat(tmp, _w);
+					if (strlen(tmp))
+					{
+						if (get_ip_from_ipstr(tmp) == INADDR_NONE || get_ip_from_ipstr(tmp) == 0)
+						{
+							l(); printf("Invalid IP: %s\n", tmp); u();
+						}
+						else {
+							strcpy(ip_str, tmp);
+							ok = true;
+							break;
+						}
+					}
+				}
+				else break;
+			} while(true);
+			if (ok) {
+				if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
+				{
+					l(); printf("Invalid IP: %s\n", ip_str); u();
+					break;
+				}
+				SetEvent(event_waiting);
+				join_game(ip_str, port, record_replay);
+			}
 		}
-		SetEvent(event_waiting);
-		join_game(ip_str, port, record_replay);
 		break;
 	case 3:
 		printf("Host Game on lobby.\n");
@@ -675,84 +681,90 @@ static unsigned int __stdcall lunaport_thfunc(void *_in)
 		break;
 	case 9:
 		printf("Spectate.\n");
-		do {
-			class CIpDlg : public CDialogImpl<CIpDlg>
-			{
-			public:
-				enum { IDD = IDD_SPECTATE };
-
-				CIPAddressCtrl ip_crtl;
-				CEdit port_crtl;
-				DWORD addr;
-				WORD port;
-
-				CIpDlg(DWORD addr, WORD port) : addr(addr), port(port) {}
-				// メッセージマップ
-				BEGIN_MSG_MAP(CIpDlg)
-					MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
-					COMMAND_ID_HANDLER(IDOK, OnOK)
-					COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
-				END_MSG_MAP()
-
-				LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
-				{
-					// スクリーンの中央に配置
-					CenterWindow();
-
-					// コントロール設定
-					ip_crtl = GetDlgItem(IDC_IPADDRESS1);
-					ip_crtl.SetAddress(addr);
-					port_crtl = GetDlgItem(IDC_EDIT1);
-					wchar_t _w[8];
-					swprintf_s(_w, 8, L"%d", port);
-					port_crtl.AppendText(_w);
-
-					return 0;
-				}
-
-				LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-				{
-					ip_crtl.GetAddress(&addr);
-					wchar_t _w[8];
-					port_crtl.GetLine(0, _w, 8);
-					port = _wtoi(_w);
-					EndDialog(wID);
-					return 0;
-				}
-
-				LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-				{
-					EndDialog(wID);
-					return 0;
-				}
-			} dlg((strlen(ip_str) > 0 && get_ip_from_ipstr(ip_str) != INADDR_NONE) ? htonl(get_ip_from_ipstr(ip_str)) : MAKEIPADDRESS(192, 168, 1, 1), get_port_from_ipstr(ip_str, port));
-			if(IDOK == dlg.DoModal()) {
-				strcpy(tmp, ip2str(htonl(dlg.addr)));
-				char _w[8];
-				sprintf_s(_w, 8, "%d", dlg.port);
-				strcat(tmp, ":");
-				strcat(tmp, _w);
-				if (strlen(tmp))
-				{
-					if (get_ip_from_ipstr(tmp) == INADDR_NONE || get_ip_from_ipstr(tmp) == 0)
-					{
-						l(); printf("Invalid IP: %s\n", tmp); u();
-					}
-					else {
-						strcpy(ip_str, tmp);
-						break;
-					}
-				}
-			}
-			else break;
-		} while(true);
-		if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
 		{
-			l(); printf("Invalid IP: %s\n", ip_str); u();
-			break;
+			bool ok = false;
+			do {
+				class CIpDlg : public CDialogImpl<CIpDlg>
+				{
+				public:
+					enum { IDD = IDD_SPECTATE };
+
+					CIPAddressCtrl ip_crtl;
+					CEdit port_crtl;
+					DWORD addr;
+					WORD port;
+
+					CIpDlg(DWORD addr, WORD port) : addr(addr), port(port) {}
+					// メッセージマップ
+					BEGIN_MSG_MAP(CIpDlg)
+						MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+						COMMAND_ID_HANDLER(IDOK, OnOK)
+						COMMAND_ID_HANDLER(IDCANCEL, OnCancel)
+					END_MSG_MAP()
+
+					LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+					{
+						// スクリーンの中央に配置
+						CenterWindow();
+
+						// コントロール設定
+						ip_crtl = GetDlgItem(IDC_IPADDRESS1);
+						ip_crtl.SetAddress(addr);
+						port_crtl = GetDlgItem(IDC_EDIT1);
+						wchar_t _w[8];
+						swprintf_s(_w, 8, L"%d", port);
+						port_crtl.AppendText(_w);
+
+						return 0;
+					}
+
+					LRESULT OnOK(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+					{
+						ip_crtl.GetAddress(&addr);
+						wchar_t _w[8];
+						port_crtl.GetLine(0, _w, 8);
+						port = _wtoi(_w);
+						EndDialog(wID);
+						return 0;
+					}
+
+					LRESULT OnCancel(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+					{
+						EndDialog(wID);
+						return 0;
+					}
+				} dlg((strlen(ip_str) > 0 && get_ip_from_ipstr(ip_str) != INADDR_NONE) ? htonl(get_ip_from_ipstr(ip_str)) : MAKEIPADDRESS(192, 168, 1, 1), get_port_from_ipstr(ip_str, port));
+				if(IDOK == dlg.DoModal()) {
+					strcpy(tmp, ip2str(htonl(dlg.addr)));
+					char _w[8];
+					sprintf_s(_w, 8, "%d", dlg.port);
+					strcat(tmp, ":");
+					strcat(tmp, _w);
+					if (strlen(tmp))
+					{
+						if (get_ip_from_ipstr(tmp) == INADDR_NONE || get_ip_from_ipstr(tmp) == 0)
+						{
+							l(); printf("Invalid IP: %s\n", tmp); u();
+						}
+						else {
+							ok = true;
+							strcpy(ip_str, tmp);
+							break;
+						}
+					}
+				}
+				else break;
+			} while(true);
+			if(ok) {
+				if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
+				{
+					l(); printf("Invalid IP: %s\n", ip_str); u();
+					break;
+				}
+				SetEvent(event_waiting);
+				spectate_game(ip_str, port, record_replay);
+			}
 		}
-		SetEvent(event_waiting);
-		spectate_game(ip_str, port, record_replay);
 		break;
 	case 10:
 		print_menu(record_replay);
@@ -835,6 +847,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 
 	AtlInitCommonControls(ICC_COOL_CLASSES | ICC_BAR_CLASSES);	// ほかのコントロール用のフラグを追加してください
 
+	timeBeginPeriod(1);
+
 	hRes = _Module.Init(NULL, hInstance);
 	ATLASSERT(SUCCEEDED(hRes));
 
@@ -895,6 +909,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	}
 	else _getcwd(dir_prefix, _MAX_PATH);
 
+	small_task_thread = ::CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)small_task_thread_proc, NULL, 0, &small_task_thread_id);
 
 	CChooseLangDlg::ListUpLanguage();
 	{
@@ -972,6 +987,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	::DeleteCriticalSection(&cur_logwin_monitor);
 
 	_Module.Term();
+	timeEndPeriod(1);
 	::CoUninitialize();
 
 	return nRet;

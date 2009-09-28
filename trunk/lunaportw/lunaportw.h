@@ -10,6 +10,8 @@ extern HANDLE mutex_print;            // ensure prints are ordered/atomic
 extern HANDLE mutex_history;          // lock changes to game	history
 extern HANDLE event_running;          // game has started
 extern HANDLE event_waiting;          // game is waiting
+extern HANDLE small_task_thread;
+extern DWORD small_task_thread_id;
 extern SOCKET sock;                   // socket used for communication
 extern unsigned long remote_player;   // remote player
 extern int local_p;                   // 0 = local p1, 1 = local p2
@@ -105,6 +107,7 @@ extern void read_config (unsigned int *port, int *record_replay, int *allow_spec
 extern void calc_crcs ();
 extern void unregister_lobby ();
 extern bool inifile_exists(const char *argv0);
+extern DWORD WINAPI small_task_thread_proc(LPVOID);
 
 void do_lunaport(int i);
 void set_lunaport_param(const char *_ip_str, int _lobby_spec);

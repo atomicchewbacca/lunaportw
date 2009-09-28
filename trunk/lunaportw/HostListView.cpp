@@ -45,7 +45,7 @@ LRESULT CHostListView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 
 	//empty_text.Create(GetWindow(GW_CHILD), rcDefault, NULL, WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | SS_CENTER | SS_CENTERIMAGE, 0);
 	//empty_text.CenterWindow();
-	//empty_text.SetWindowText(_T("No host avaivable."));
+	//empty_text.SetWindowText(_T("No host available."));
 	
 	//if(refresh_thread) ::CloseHandle(refresh_thread);
 	//refresh_thread = (HANDLE)::_beginthreadex(NULL, 0, downloadlist, (void *)this, 0, NULL);
@@ -131,7 +131,7 @@ void CHostListView::refresh()
 	if(lobby.games.empty()) {
 		//empty_text.ShowWindow(TRUE);
 		EnableWindow(FALSE);
-		AddItem(0, 0, _T("No host avaivable."));
+		AddItem(0, 0, _T("No host available."));
 	}
 	else {
 		EnableWindow(TRUE);

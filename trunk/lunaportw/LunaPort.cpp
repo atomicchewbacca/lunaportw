@@ -54,6 +54,8 @@ HANDLE mutex_print;            // ensure prints are ordered/atomic
 HANDLE mutex_history;          // lock changes to game	history
 HANDLE event_running;          // game has started
 HANDLE event_waiting;          // game is waiting
+HANDLE small_task_thread;      // for small task
+DWORD small_task_thread_id;
 SOCKET sock;                   // socket used for communication
 unsigned long remote_player;   // remote player
 int local_p;                   // 0 = local p1, 1 = local p2
@@ -670,6 +672,28 @@ bool replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int 
 	return false;
 }
 
+void set_caption (void *p);
+void send_foreground ();
+void spec_handshake (unsigned long peer);
+DWORD WINAPI small_task_thread_proc(LPVOID)
+{
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0) > 0) {
+		switch(msg.message) {
+		case WM_USER+0:
+			set_caption((char *)msg.wParam);
+			break;
+		case WM_USER+1:
+			send_foreground();
+			break;
+		case WM_USER+2:
+			spec_handshake((unsigned long)msg.wParam);
+			break;
+		}
+	}
+	return 0;
+}
+
 void set_caption (void *p)
 {
 	HWND game_window = FindWindow("KGT2KGAME", NULL);
@@ -1109,7 +1133,8 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 						strcat(title_base, " vs ");
 						strcat(title_base, p2_name);
 						strcpy(window_title, title_base);
-						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+						//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+						PostThreadMessage(small_task_thread_id, WM_USER+0, (WPARAM)window_title, 0);
 					}
 					WriteProcessMemory(proc, (void *)TITLE_BREAK, title_break_bak, sizeof(title_break_bak), NULL); // reset old code
 					FlushInstructionCache(proc, NULL, 0); // shouldn't hurt
@@ -1150,7 +1175,8 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 							}
 						}
 						if (display_framerate || display_inputrate || record_replay == -1)
-							CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+							//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+							PostThreadMessage(small_task_thread_id, WM_USER+0, (WPARAM)window_title, 0);
 						frames = 0;
 						inputs = 0;
 						last_sec = now;
@@ -1359,7 +1385,8 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 					FlushInstructionCache(proc, NULL, 0);
 				}
 
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)send_foreground, (void *)NULL, 0, NULL);
+				//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)send_foreground, (void *)NULL, 0, NULL);
+				PostThreadMessage(small_task_thread_id, WM_USER+1, 0, 0);
 			}
 			break;
 
@@ -1916,7 +1943,8 @@ bool spec_accept_callback (SOCKADDR_IN peer, luna_packet *packet)
 	}
 
 	conmanager.rereceive(peer.sin_addr.s_addr, packet);
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)spec_handshake, (void *)peer.sin_addr.s_addr, 0, NULL);
+	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)spec_handshake, (void *)peer.sin_addr.s_addr, 0, NULL);
+	PostThreadMessage(small_task_thread_id, WM_USER+2, (WPARAM)peer.sin_addr.s_addr, 0);
 	return true;
 }
 
