@@ -4,7 +4,7 @@
 
 #pragma once
 
-class CLunaportwView : public CWindowImpl<CLunaportwView, CRichEditCtrl>
+class CLunaportwView : public CWindowImpl<CLunaportwView, CRichEditCtrl>, public CRichEditCommands<CLunaportwView>
 {
 public:
 	DECLARE_WND_SUPERCLASS(NULL, CRichEditCtrl::GetWndClassName())
@@ -16,6 +16,7 @@ public:
 	BEGIN_MSG_MAP(CLunaportwView)
 		MESSAGE_HANDLER(WM_CREATE, OnCreate)
 		MESSAGE_HANDLER(WM_CLOSE, OnClose)
+		CHAIN_MSG_MAP_ALT(CRichEditCommands<CLunaportwView>, 1)
 	END_MSG_MAP()
 
 	// ハンドラーのプロトタイプ （引数が必要な場合はコメントを外してください）:

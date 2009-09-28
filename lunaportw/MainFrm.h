@@ -52,9 +52,11 @@ public:
 		COMMAND_ID_HANDLER(ID_WINDOW_CLOSE, OnWindowClose)
 		COMMAND_ID_HANDLER(ID_WINDOW_CLOSE_ALL, OnWindowCloseAll)
 		COMMAND_RANGE_HANDLER(ID_WINDOW_TABFIRST, ID_WINDOW_TABLAST, OnWindowActivate)
+		CHAIN_MSG_MAP_ALT_MEMBER(m_LogView, 0)
 		CHAIN_MSG_MAP(CUpdateUI<CMainFrame>)
 		CHAIN_MSG_MAP(CFrameWindowImpl<CMainFrame>)
 		REFLECT_NOTIFICATIONS()
+        //CHAIN_CLIENT_COMMANDS()    // ビュークラスへコマンドチェーン
 	END_MSG_MAP()
 
 	// ハンドラーのプロトタイプ （引数が必要な場合はコメントを外してください）:

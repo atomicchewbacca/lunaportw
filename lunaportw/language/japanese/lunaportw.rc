@@ -62,6 +62,19 @@ IDR_TOOLBAR        BITMAP         "..\\..\\res\\Toolbar.bmp"
 // Menu resources
 //
 LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
+IDR_LOBBY_POPUP MENU
+{
+    POPUP "ロビー"
+    {
+        MENUITEM "凸する", ID_LOBBY_JOIN
+        MENUITEM "観戦", ID_LOBBY_SPEC
+        MENUITEM "Ping計測", ID_LOBBY_PING, GRAYED, INACTIVE
+    }
+}
+
+
+
+LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
 IDR_MAINFRAME MENU
 {
     POPUP "LunaPort(&L)"
@@ -76,6 +89,14 @@ IDR_MAINFRAME MENU
         MENUITEM "ホスト一覧取得(&L)", ID_GAME_LISTLOBBYGAMES
         MENUITEM SEPARATOR
         MENUITEM "アプリケーションの終了(&X)", ID_APP_EXIT
+    }
+    POPUP "編集(&E)"
+    {
+        MENUITEM "元に戻す(&U)\tCtrl+Z", ID_EDIT_UNDO, GRAYED, INACTIVE
+        MENUITEM SEPARATOR
+        MENUITEM "切り取り(&T)\tCtrl+X", ID_EDIT_CUT, GRAYED, INACTIVE
+        MENUITEM "コピー(&C)\tCtrl+C", ID_EDIT_COPY
+        MENUITEM "貼り付け(&P)\tCtrl+V", ID_EDIT_PASTE, GRAYED, INACTIVE
     }
     POPUP "オプション(&O)"
     {
@@ -98,19 +119,6 @@ IDR_MAINFRAME MENU
     POPUP "ヘルプ(&H)"
     {
         MENUITEM "バージョン情報 LunaPortW(&A)...", ID_APP_ABOUT
-    }
-}
-
-
-
-LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
-IDR_LOBBY_POPUP MENU
-{
-    POPUP "ロビー"
-    {
-        MENUITEM "凸する", ID_LOBBY_JOIN
-        MENUITEM "観戦", ID_LOBBY_SPEC
-        MENUITEM "Ping計測", ID_LOBBY_PING, GRAYED, INACTIVE
     }
 }
 
@@ -270,6 +278,7 @@ STRINGTABLE
     IDS_PLAYERSTATUS_WAITING      "募集中"
     IDS_PLAYERSTATUS_PLAYING      "対戦中"
     IDS_PLAYERSTATUS_BUSY         "ビジー"
+    IDS_REPING                    "PING値再測定"
 }
 
 
