@@ -42,6 +42,7 @@
 #include "Lobby.h"
 using namespace std;
 
+#define SEM_RECVD_FREEPASS	(0xFFFF)
 // don't like these globals and gotos? tough
 
 FILE *logfile;                 // debug log file
@@ -664,7 +665,7 @@ bool replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int 
 			}
 			else {
 				l(); printf("Replay ended.\n"); u();
-				ReleaseSemaphore(sem_recvd_input, 2, NULL);
+				ReleaseSemaphore(sem_recvd_input, SEM_RECVD_FREEPASS, NULL);
 				return true;
 			}
 		}
@@ -708,8 +709,7 @@ void set_caption (void *p)
 void send_foreground ()
 {
 	HWND game_window = FindWindow("KGT2KGAME", NULL);
-	SetWindowPos(game_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-	SetWindowPos(game_window, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+	SetWindowPos(game_window, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
 }
 
 int replay_control (int init)
@@ -1601,8 +1601,8 @@ void spec_receiver (AsyncPacket *packet)
 		if (proc != NULL)
 		{
 			remote_history.fake();
-			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			quit_game_sync();
+			ReleaseSemaphore(sem_recvd_input, SEM_RECVD_FREEPASS, NULL);
+			quit_game();
 		}
 		break;
 	case PACKET_TYPE_ERROR:
@@ -1613,8 +1613,8 @@ void spec_receiver (AsyncPacket *packet)
 			printf("Connection closed.\n");
 			u();
 			remote_history.fake();
-			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			quit_game_sync();
+			ReleaseSemaphore(sem_recvd_input, SEM_RECVD_FREEPASS, NULL);
+			quit_game();
 		}
 		break;
 	case PACKET_TYPE_JUMBO:
@@ -1671,14 +1671,15 @@ void peer_receiver (AsyncPacket *packet)
 			printf("Connection closed.\n");
 			u();
 			remote_history.fake();
-			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			quit_game_sync();
+			ReleaseSemaphore(sem_recvd_input, SEM_RECVD_FREEPASS, NULL);
+			quit_game();
 		}
 		break;
 	case PACKET_TYPE_AGAIN:
 		if (peer != remote_player)
 			break;
 
+		printf("Got resend request from %08x to %08x.\n", lp->low_id, lp->high_id);
 		if (DEBUG) { l(); fprintf(logfile, "Got resend request from %08x to %08x.\n", lp->low_id, lp->high_id); u(); }
 		resends = local_history.resend(lp->low_id, lp->high_id, &n);
 		for (i = 0; i < n; i++)
@@ -1727,8 +1728,8 @@ void peer_receiver (AsyncPacket *packet)
 			if (proc != NULL)
 			{
 				remote_history.fake();
-				ReleaseSemaphore(sem_recvd_input, 2, NULL);
-				quit_game_sync();
+				ReleaseSemaphore(sem_recvd_input, SEM_RECVD_FREEPASS, NULL);
+				quit_game();
 			}
 		}
 		break;
