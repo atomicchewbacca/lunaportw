@@ -3,8 +3,9 @@
 /////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+#include <queue>
 
-class CLunaportwView : public CWindowImpl<CLunaportwView, CRichEditCtrl>, public CRichEditCommands<CLunaportwView>
+class CLunaportwView : public CWindowImpl<CLunaportwView, CRichEditCtrl>, public CRichEditCommands<CLunaportwView>, public CIdleHandler 
 {
 public:
 	DECLARE_WND_SUPERCLASS(NULL, CRichEditCtrl::GetWndClassName())
@@ -12,6 +13,10 @@ public:
 	~CLunaportwView();
 
 	BOOL PreTranslateMessage(MSG* pMsg);
+
+	std::queue<CString> logmsg_queue;
+
+    virtual BOOL OnIdle();
 
 	BEGIN_MSG_MAP(CLunaportwView)
 		MESSAGE_HANDLER(WM_CREATE, OnCreate)

@@ -53,25 +53,11 @@ int __log_printf(const char *fmt, ...)
 		va_list args;
 		va_start(args, fmt);
 		vsprintf_s(str, 512, fmt, args);
-		wchar_t *tmp;
-		size_t s = strlen(str);
-		size_t ws = mbstowcs(0, str, s);
-		if(ws >= 0 && ws != (size_t)-1) {
-			tmp = (wchar_t *)malloc(sizeof(wchar_t)*(ws+1));
-			if(tmp) {
-				size_t ts = mbstowcs(tmp, str, s);
-				if(ts >= 0 && ts != (size_t)-1) {
-					tmp[ws] = L'\0';\
-				}
-				else {
-					free(tmp);
-					return 0;
-				}
-			}
-		}
-		cur_logwin->AppendText(tmp);
-		cur_logwin->HideCaret();
-		free(tmp);
+		CString tmp(str);
+		//cur_logwin->AppendText(tmp);
+		cur_logwin->logmsg_queue.push(tmp);
+		::PostAppMessage(_Module.m_dwMainThreadID, WM_NULL, 0, 0);
+		::OutputDebugString(tmp);
 	}
 	::LeaveCriticalSection(&cur_logwin_monitor);
 	return 0;
@@ -982,6 +968,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	}
 
 	save_config(max_points, keep_session_log, session_log);
+	::PostThreadMessage(small_task_thread_id, WM_QUIT, 0, 0);
 	WSACleanup();
 
 	::DeleteCriticalSection(&cur_logwin_monitor);

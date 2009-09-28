@@ -29,7 +29,9 @@ LRESULT CLunaportwView::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 	::EnterCriticalSection(&cur_logwin_monitor);
 	cur_logwin = this;
 	::LeaveCriticalSection(&cur_logwin_monitor);
-	bHandled = FALSE;
+   	bHandled = FALSE;
+	CMessageLoop* pLoop = _Module.GetMessageLoop();
+	pLoop->AddIdleHandler(this);
 	return 0;
 }
 
@@ -45,6 +47,20 @@ LRESULT CLunaportwView::OnClose(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 BOOL CLunaportwView::PreTranslateMessage(MSG* pMsg)
 {
 	pMsg;
+	return FALSE;
+}
+
+BOOL CLunaportwView::OnIdle()
+{
+	::EnterCriticalSection(&cur_logwin_monitor);
+	if(cur_logwin == this) {
+		while(!logmsg_queue.empty()) {
+			AppendText(logmsg_queue.front());
+			logmsg_queue.pop();
+		}
+		HideCaret(); // ï Ç…è¡Ç≥Ç»Ç≠ÇƒÇ‡ó«Ç¢Ç©Åc
+	}
+	::LeaveCriticalSection(&cur_logwin_monitor);
 	return FALSE;
 }
 
