@@ -134,7 +134,7 @@ CAPTION "About"
 FONT 8, "MS Sans Serif"
 {
     DEFPUSHBUTTON   "OK", IDOK, 130, 101, 50, 14
-    CTEXT           "LunaPortW v1.0.3\n\n(c) Copyright 2009", IDC_STATIC, 52, 39, 78, 32, SS_CENTER
+    CTEXT           "LunaPortW v1.0.4\n\n(c) Copyright 2009", IDC_STATIC, 52, 39, 78, 32, SS_CENTER
     ICON            IDR_MAINFRAME, IDC_STATIC, 81, 14, 21, 20, SS_ICON
     GROUPBOX        "", IDC_STATIC, 7, 7, 173, 72
     LTEXT           "Toolbar Icon from http://pixel-mixer.com", IDC_STATIC, 7, 86, 137, 8, SS_LEFT
@@ -334,8 +334,8 @@ IDR_MAINFRAME      ICON           ".\\res\\lunaportw.ico"
 //
 LANGUAGE LANG_NEUTRAL, SUBLANG_DEFAULT
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION     1,0,3,0
-    PRODUCTVERSION  1,0,3,0
+    FILEVERSION     1,0,4,0
+    PRODUCTVERSION  1,0,4,0
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_DLL
 {
@@ -346,12 +346,12 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "Comments", "\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "LunaPort GUI version\0"
-            VALUE "FileVersion", "1.0.3.0\0"
+            VALUE "FileVersion", "1.0.4.0\0"
             VALUE "InternalName", "lunaportw\0"
             VALUE "LegalCopyright", "Copyright (C) 2009 Anonymous, ore.  All rights reserved.\0"
             VALUE "OriginalFilename", "lunaportw.exe\0"
             VALUE "ProductName", "LunaPortW\0"
-            VALUE "ProductVersion", "1.0.3.0\0"
+            VALUE "ProductVersion", "1.0.4.0\0"
         }
     }
     BLOCK "VarFileInfo"
@@ -364,8 +364,8 @@ VS_VERSION_INFO VERSIONINFO
 
 LANGUAGE LANG_JAPANESE, SUBLANG_JAPANESE_JAPAN
 VS_VERSION_INFO VERSIONINFO
-    FILEVERSION     1,0,3,0
-    PRODUCTVERSION  1,0,3,0
+    FILEVERSION     1,0,4,0
+    PRODUCTVERSION  1,0,4,0
     FILEOS          VOS__WINDOWS32
     FILETYPE        VFT_DLL
 {
@@ -376,7 +376,7 @@ VS_VERSION_INFO VERSIONINFO
             VALUE "Comments", "ÉXÉQÉmÇ∑Ç∞Å[ÇÃÅ[\0"
             VALUE "CompanyName", "\0"
             VALUE "FileDescription", "LunaPort GUIî≈\0"
-            VALUE "FileVersion", "1.0.3.0\0"
+            VALUE "FileVersion", "1.0.4.0\0"
             VALUE "InternalName", "lunaportw\0"
             VALUE "LegalCopyright", "Copyright (C) 2009 Anonymous, â¥.  All rights reserved.\0"
             VALUE "OriginalFilename", "lunaportw.exe\0"

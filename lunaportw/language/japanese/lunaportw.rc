@@ -134,7 +134,7 @@ CAPTION "バージョン情報 lunaportw"
 FONT 9, "MS UI Gothic"
 {
     DEFPUSHBUTTON   "OK", IDOK, 130, 81, 50, 14
-    CTEXT           "LunaPortW v1.0.3\n\n(c) Copyright 2009", IDC_STATIC, 56, 39, 78, 32, SS_CENTER
+    CTEXT           "LunaPortW v1.0.4\n\n(c) Copyright 2009", IDC_STATIC, 56, 39, 78, 32, SS_CENTER
     ICON            IDR_MAINFRAME, IDC_STATIC, 84, 14, 18, 21, SS_ICON
     GROUPBOX        "", IDC_STATIC, 7, 7, 173, 64
     LTEXT           "ツールバーのアイコン提供 pixel-mixer.com", IDC_STATIC, 7, 77, 117, 8, SS_LEFT
