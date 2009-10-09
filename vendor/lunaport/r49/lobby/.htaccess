@@ -1,0 +1,4 @@
+# deny access to database file
+<FilesMatch lplobby.sqlt>
+Deny from all
+</FilesMatch>
