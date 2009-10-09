@@ -22,6 +22,7 @@
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4200)
+#pragma pack(push, 1)
 #endif
 
 typedef struct _lplobby_record
@@ -45,6 +46,10 @@ typedef struct _lplobby_head
 	char msg[NET_STRING_BUFFER]; // greeting sent by lobby
 	lplobby_record records[];    // records sent as response to request
 } PACKED_STRUCT lplobby_head;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif
 
 // call curl_global_init(CURL_GLOBAL_ALL); at startup
 const char *http_error (int e);

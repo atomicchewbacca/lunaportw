@@ -28,6 +28,7 @@
 #include <winuser.h>
 #include <mmsystem.h>
 #include <tlhelp32.h>
+#include <shlwapi.h>
 #include <iostream>
 #include <string>
 #include <curl/curl.h>
@@ -46,13 +47,15 @@ using namespace std;
 FILE *logfile;                 // debug log file
 FILE *bpprof;                  // breakpoint time profile file
 HANDLE this_proc;              // LunaPort handle
-HANDLE proc;                   // Vanguard Princess handle
+HANDLE proc = 0;               // Vanguard Princess handle
 HANDLE sem_recvd_input;        // new remote input has been received
 HANDLE sem_ping_end;           // signal end of ping thread
 HANDLE mutex_print;            // ensure prints are ordered/atomic
 HANDLE mutex_history;          // lock changes to game	history
 HANDLE event_running;          // game has started
 HANDLE event_waiting;          // game is waiting
+HANDLE small_task_thread;      // for small task
+DWORD small_task_thread_id;
 SOCKET sock;                   // socket used for communication
 unsigned long remote_player;   // remote player
 int local_p;                   // 0 = local p1, 1 = local p2
@@ -72,9 +75,11 @@ unsigned int set_max_stages;            // number of stages set in lunaport.ini
 int rnd_seed;                           // seed of current game
 FILE *write_replay;                     // write replay here
 bool recording_ended;                   // set after faking a packet, this ensures it is not written to replay file
+bool force_esc;                         // simulate esc press
 DWORD kgt_crc;                          // CRC32 of kgt file
 long kgt_size;                          // size of kgt file
 int blacklist_local;                    // 1 = use stage blacklist for local games too, 0 = don't
+char max_ipf;
 int terminate_ping_thread;
 int check_exe;
 int ask_spectate;
@@ -85,7 +90,7 @@ int display_framerate;
 int display_inputrate;
 int display_names;
 int display_lobby_comments;
-char game_exe[_MAX_PATH];
+char game_exe[_MAX_PATH], replays_dir[_MAX_PATH];
 char own_name[NET_STRING_BUFFER], p1_name[NET_STRING_BUFFER], p2_name[NET_STRING_BUFFER];
 char set_blacklist[NET_STRING_BUFFER], blacklist1[NET_STRING_BUFFER], blacklist2[NET_STRING_BUFFER];
 char lobby_url[NET_STRING_BUFFER], lobby_comment[NET_STRING_BUFFER];
@@ -103,6 +108,27 @@ char *ip2str (unsigned long ip)
 	SOCKADDR_IN sa;
 	sa.sin_addr.s_addr = ip;
 	return inet_ntoa(sa.sin_addr);
+}
+
+static unsigned long get_ip_from_ipstr(const char *cp)
+{
+	char tmp[256];
+	strncpy(tmp, cp, 255);
+	for(int i = 0; tmp[i] && i < 256; i++) {
+		if(tmp[i] == ':') {
+			tmp[i] = '\0';
+			break;
+		}
+	}
+	return inet_addr(tmp);
+}
+
+static int get_port_from_ipstr(const char *cp, int default_port)
+{
+	for(int i = 0; cp[i] && i < 256; i++) {
+		if(cp[i] == ':') return atoi(cp+i+1);
+	}
+	return default_port;
 }
 
 // implementation of InputHistory (split into separate file later)
@@ -468,6 +494,22 @@ void clean_filestring (char *str)
 	}
 }
 
+static void quit_game ()
+{
+	HWND game_window = ::FindWindow("KGT2KGAME", NULL);
+	if(game_window) ::PostMessage(game_window, WM_CLOSE, 0, 0);
+}
+
+static void quit_game_sync()
+{
+	quit_game();
+	if(proc) {
+		DWORD ec;
+		if(::GetExitCodeProcess(proc, &ec) && ec == STILL_ACTIVE && WAIT_TIMEOUT == ::WaitForSingleObject(proc, 3000)) TerminateProcess(proc, 0);
+		if(ec == STILL_ACTIVE) printf("Process terminated.\n");
+	}
+}
+
 FILE *create_replay_file ()
 {
 	FILE *hnd;
@@ -487,8 +529,8 @@ FILE *create_replay_file ()
 	strcpy(p2_name_clean, p2_name);
 	clean_filestring(p1_name_clean);
 	clean_filestring(p2_name_clean);
-	filename = std::string("Replays\\") + std::string(date) + ((p1_name[0] && p2_name[0]) ? (std::string("-") + std::string(p1_name_clean) + std::string("-vs-") + std::string(p2_name_clean)) : std::string("")) + std::string(".rpy");
-	strcpy(path, dir_prefix);
+	filename = std::string(date) + ((p1_name[0] && p2_name[0]) ? (std::string("-") + std::string(p1_name_clean) + std::string("-vs-") + std::string(p2_name_clean)) : std::string("")) + std::string(".rpy");
+	strcpy(path, replays_dir);
 	strcat(path, "\\");
 	strcat(path, filename.c_str());
 	printf("Saving replay: %s\n", filename.c_str());
@@ -516,12 +558,12 @@ FILE *open_replay_file (char *filename, int *seed)
 	int stages;
 
 	ZeroMemory(fin_filename, _MAX_PATH);
-	if (filename[1] == ':')
+	if (filename[0] && filename[1] == ':')
 		strcpy(fin_filename, filename);
 	else
 	{
-		strcpy(fin_filename, dir_prefix);
-		strcat(fin_filename, "\\Replays\\");
+		strcpy(fin_filename, replays_dir);
+		strcat(fin_filename, "\\");
 		strcat(fin_filename, filename);
 	}
 	l(); printf("Playing replay: %s\n", fin_filename); u();
@@ -574,7 +616,7 @@ FILE *open_replay_file (char *filename, int *seed)
 	return hnd;
 }
 
-void replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int record_replay, int network, int single_player, int spectator)
+bool replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int record_replay, int network, int single_player, int spectator)
 {
 	CONTEXT c;
 
@@ -620,29 +662,56 @@ void replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int 
 				if (DEBUG) { l(); fprintf(logfile, "Read input %08x at %08x.\n", c.Eax, address); u(); }
 				SetThreadContext(proc_thread, &c);
 				FlushInstructionCache(proc, NULL, 0); // shouldn't hurt
-				return;
 			}
-
-			fclose(replay);
-			replay = NULL;
-			l(); printf("Replay ended.\n"); u();
-			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			TerminateProcess(proc, 0);
+			else {
+				l(); printf("Replay ended.\n"); u();
+				ReleaseSemaphore(sem_recvd_input, 2, NULL);
+				return true;
+			}
 		}
 	}
+	return false;
 }
 
-void set_caption (void *p)
+void set_caption (char *title);
+void send_foreground ();
+void spec_handshake (unsigned long peer);
+enum SmallTaskMessage {
+	STM_SETCAPTION = WM_USER,
+	STM_SENDFOREGROUND,
+	STM_SPECHANDSHAKE
+};
+DWORD WINAPI small_task_thread_proc(LPVOID)
+{
+	MSG msg;
+	while (GetMessage(&msg, NULL, 0, 0) > 0) {
+		switch(msg.message) {
+		case STM_SETCAPTION:
+			set_caption((char *)msg.wParam);
+			break;
+		case STM_SENDFOREGROUND:
+			send_foreground();
+			break;
+		case STM_SPECHANDSHAKE:
+			spec_handshake((unsigned long)msg.wParam);
+			break;
+		}
+	}
+	return 0;
+}
+
+void set_caption (char *title)
 {
 	HWND game_window = FindWindow("KGT2KGAME", NULL);
-	SetWindowText(game_window, (char *)p);
+	SetWindowText(game_window, title);
 }
 
-void send_foreground (void *p)
+void send_foreground ()
 {
 	HWND game_window = FindWindow("KGT2KGAME", NULL);
 	SetWindowPos(game_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
 	SetWindowPos(game_window, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
+	//SetWindowPos(game_window, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
 }
 
 int replay_control (int init)
@@ -814,10 +883,33 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 	ZeroMemory(&window_title, sizeof(window_title));
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
-	strcpy(path, dir_prefix);
-	strcat(path, "\\");
-	strcat(path, game_exe);
+	if(game_exe[0] && game_exe[1] == ':') {
+		strcpy(path, game_exe);
+	}
+	else {
+		strcpy(path, dir_prefix);
+		strcat(path, "\\");
+		strcat(path, game_exe);
+	}
 	l(); printf("Running: %s\n", path); u();
+
+	char prev_cd[_MAX_PATH];
+	_getcwd(prev_cd, _MAX_PATH);
+	{
+		char _path[_MAX_PATH];
+		strcpy(_path, path);
+		for (i = strlen(_path) - 1; i >= 0; i--)
+			if (_path[i] == '\\' || _path[i] == '/')
+			{
+				_path[i] = 0;
+				break;
+			}
+		_chdir(_path);
+	}
+	if(proc) {
+		CloseHandle(proc);
+		proc = NULL;
+	}
 	if (!CreateProcess(path, NULL, NULL, NULL, FALSE, DEBUG_PROCESS, NULL, NULL, &si, &pi))
 	{
 		l(); printf("Couldn't find game exe. Trying alternative.\n"); u();
@@ -833,7 +925,11 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 			return 0;
 		}
 	}
+#ifdef _MSC_VER
+	proc = pi.hProcess;
+#else
 	proc = OpenProcess(PROCESS_ALL_ACCESS, false, pi.dwProcessId);
+#endif
 
 	if (!spectator)
 		update_history(seed); // first entry of the game history is the seed
@@ -978,7 +1074,14 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 					inputs++;
 					if (DEBUG) { l(); fprintf(logfile, "Entering input handler.\n"); u(); }
 					if (record_replay || spectator)
-						replay_input_handler(address, proc_thread, replay, record_replay, 0, 0, spectator);
+					{
+						if(replay_input_handler(address, proc_thread, replay, record_replay, 0, 0, spectator))
+						{
+							quit_game();
+							fclose(replay);
+							replay = NULL;
+						}
+					}
 					if (DEBUG) { l(); fprintf(logfile, "Leaving input handler.\n"); u(); }
 					break;
 
@@ -994,7 +1097,12 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 					inputs += 2;
 					if (record_replay || spectator)
 					{
-						replay_input_handler(address, proc_thread, replay, record_replay, network, single_player, spectator);
+						if(replay_input_handler(address, proc_thread, replay, record_replay, network, single_player, spectator))
+						{
+							quit_game();
+							fclose(replay);
+							replay = NULL;
+						}
 						break;
 					}
 
@@ -1032,7 +1140,8 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 						strcat(title_base, " vs ");
 						strcat(title_base, p2_name);
 						strcpy(window_title, title_base);
-						CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+						//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+						PostThreadMessage(small_task_thread_id, STM_SETCAPTION, (WPARAM)window_title, 0);
 					}
 					WriteProcessMemory(proc, (void *)TITLE_BREAK, title_break_bak, sizeof(title_break_bak), NULL); // reset old code
 					FlushInstructionCache(proc, NULL, 0); // shouldn't hurt
@@ -1073,7 +1182,8 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 							}
 						}
 						if (display_framerate || display_inputrate || record_replay == -1)
-							CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+							//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)set_caption, (void *)window_title, 0, NULL);
+							PostThreadMessage(small_task_thread_id, STM_SETCAPTION, (WPARAM)window_title, 0);
 						frames = 0;
 						inputs = 0;
 						last_sec = now;
@@ -1229,6 +1339,12 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 				WriteProcessMemory(proc, (void *)REMOTE_P_FUNC, remote_p_func, sizeof(remote_p_func), NULL); // remote player input grabber
 				WriteProcessMemory(proc, (void *)REMOTE_P_JMPBACK, remote_p_jmpback[remote_p], sizeof(remote_p_jmpback[remote_p]), NULL); // remote player input grabber jump back
 
+				if (max_ipf)
+				{
+					WriteProcessMemory(proc, (void *)FPS_HACK, fps_hack_func, sizeof(fps_hack_func), NULL); // insert alternative timing code
+					WriteProcessMemory(proc, (void *)MAX_INPUTS_PER_FRAME, &max_ipf, 1, NULL); // limit number of dropped frames to max_ipf
+				}
+
 				if (display_framerate || display_inputrate)
 				{
 					WriteProcessMemory(proc, (void *)FRAME_FUNC, frame_func, sizeof(frame_func), NULL); // frame rate counter hook
@@ -1282,7 +1398,8 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 					FlushInstructionCache(proc, NULL, 0);
 				}
 
-				CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)send_foreground, (void *)NULL, 0, NULL);
+				//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)send_foreground, (void *)NULL, 0, NULL);
+				PostThreadMessage(small_task_thread_id, STM_SENDFOREGROUND, 0, 0);
 			}
 			break;
 
@@ -1307,13 +1424,15 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 	}
 
 DONE:
+	l(); printf("Done\n"); u();
 	if (replay != NULL)
 	{
 		fclose(replay);
 		replay = NULL;
 	}
 	session.end();
-	CloseHandle(proc);
+	quit_game_sync();
+	_chdir(prev_cd);
 
 	return 0;
 }
@@ -1491,7 +1610,7 @@ void spec_receiver (AsyncPacket *packet)
 		{
 			remote_history.fake();
 			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			TerminateProcess(proc, 0);
+			quit_game();
 		}
 		break;
 	case PACKET_TYPE_ERROR:
@@ -1503,7 +1622,7 @@ void spec_receiver (AsyncPacket *packet)
 			u();
 			remote_history.fake();
 			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			TerminateProcess(proc, 0);
+			quit_game();
 		}
 		break;
 	case PACKET_TYPE_JUMBO:
@@ -1561,7 +1680,7 @@ void peer_receiver (AsyncPacket *packet)
 			u();
 			remote_history.fake();
 			ReleaseSemaphore(sem_recvd_input, 2, NULL);
-			TerminateProcess(proc, 0);
+			quit_game();
 		}
 		break;
 	case PACKET_TYPE_AGAIN:
@@ -1617,7 +1736,7 @@ void peer_receiver (AsyncPacket *packet)
 			{
 				remote_history.fake();
 				ReleaseSemaphore(sem_recvd_input, 2, NULL);
-				TerminateProcess(proc, 0);
+				quit_game();
 			}
 		}
 		break;
@@ -1837,7 +1956,8 @@ bool spec_accept_callback (SOCKADDR_IN peer, luna_packet *packet)
 	}
 
 	conmanager.rereceive(peer.sin_addr.s_addr, packet);
-	CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)spec_handshake, (void *)peer.sin_addr.s_addr, 0, NULL);
+	//CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)spec_handshake, (void *)peer.sin_addr.s_addr, 0, NULL);
+	PostThreadMessage(small_task_thread_id, STM_SPECHANDSHAKE, (WPARAM)peer.sin_addr.s_addr, 0);
 	return true;
 }
 
@@ -1848,7 +1968,8 @@ void spectate_game (char *ip_str, int port, int record_replay)
 {
 	HANDLE alive = NULL, serve_specs = NULL;
 	SOCKADDR_IN sa;
-	unsigned long ip = inet_addr(ip_str);
+	unsigned long ip = get_ip_from_ipstr(ip_str);
+	port = get_port_from_ipstr(ip_str, port);
 	int seed;
 	DWORD other_crc;
 	long other_size;
@@ -1952,7 +2073,7 @@ void spectate_game (char *ip_str, int port, int record_replay)
 		TERMINATE_EARLY
 	}
 
-	l(); printf("Game on started. Recieving game data.\n", ip_str); u();
+	l(); printf("Game started. Recieving game data.\n"); u();
 
 	if (!receive_string(p1_name, ip) || !receive_string(p2_name, ip))
 	{
@@ -2043,7 +2164,8 @@ void join_game (char *ip_str, int port, int record_replay)
 {
 	HANDLE alive = NULL, serve_specs = NULL;
 	SOCKADDR_IN sa;
-	int ip = inet_addr(ip_str);
+	int ip = get_ip_from_ipstr(ip_str);
+	port = get_port_from_ipstr(ip_str, port);
 	int seed, d;
 	DWORD other_crc;
 	long other_size;
@@ -2297,7 +2419,7 @@ HOST:
 	conmanager.init(&sock, port, (DefaultCallback)spec_accept_callback);
 	serve_specs = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)serve_spectators, NULL, 0, NULL);
 
-	l(); printf("Waiting for connection to LunaPort...\n"); u();
+	l(); printf("Waiting for connection to LunaPort... (ESC to abort)\n"); u();
 WAIT:
 	TerminateThread(serve_specs, 0);
 	CloseHandle(serve_specs);
@@ -2528,11 +2650,11 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 				  int *ask_spectate, int *display_framerate, int *display_inputrate, int *display_names, char *game_exe,
 				  char *own_name, char *set_blacklist, int *blacklist_local, int *check_exe, int *max_points,
 				  int *keep_session_log, char *session_log, char *lobby_url, char *lobby_comment, int *display_lobby_comments,
-				  int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound)
+				  int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound, char *replays_dir, char *max_ipf)
 {
 	char config_filename[_MAX_PATH];
 	strcpy(config_filename, dir_prefix);
-	strcat(config_filename, "\\lunaport.ini");
+	strcat(config_filename, "\\"INIFILE);
 	*port = GetPrivateProfileInt("LunaPort", "Port", PORT, config_filename);
 	*record_replay = GetPrivateProfileInt("LunaPort", "RecordReplayDefault", 0, config_filename);
 	*allow_spectators = GetPrivateProfileInt("LunaPort", "AllowSpectatorsDefault", 1, config_filename);
@@ -2550,7 +2672,9 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 	*max_points = GetPrivateProfileInt("LunaPort", "MaxPoints", 2, config_filename);
 	*keep_session_log = GetPrivateProfileInt("LunaPort", "KeepSessionLog", 1, config_filename);
 	*check_exe = GetPrivateProfileInt("LunaPort", "CheckExeCRC", 1, config_filename);
+	*max_ipf = MAX(0, MIN(255, GetPrivateProfileInt("LunaPort", "FPSHack", 0, config_filename)));
 	GetPrivateProfileString("LunaPort", "GameExe", GAME, game_exe, _MAX_PATH-1, config_filename);
+	GetPrivateProfileString("LunaPort", "Replays", REPLAYDIR, replays_dir, _MAX_PATH-1, config_filename);
 	GetPrivateProfileString("LunaPort", "PlayerName", "Unknown", own_name, NET_STRING_BUFFER-1, config_filename);
 	GetPrivateProfileString("LunaPort", "StageBlacklist", "", set_blacklist, NET_STRING_BUFFER-1, config_filename);
 	GetPrivateProfileString("LunaPort", "SessionLog", "session.log", session_log, NET_STRING_BUFFER-1, config_filename);
@@ -2566,13 +2690,18 @@ void calc_crcs ()
 	DWORD crc;
 	long cnt;
 
-	strcpy(path, dir_prefix);
-	strcat(path, "\\");
-	strcat(path, game_exe);
+	if(game_exe[0] && game_exe[1] == ':') {
+		strcpy(path, game_exe);
+	}
+	else {
+		strcpy(path, dir_prefix);
+		strcat(path, "\\");
+		strcat(path, game_exe);
+	}
 
 	if (!crc32file(path, &crc, &cnt))
 	{
-		MessageBox(hwnd, "Cannot open game exe for CRC32 calculation.\nPlease check the filename and GameExe setting in \"lunaport.ini\".", "LunaPort Error", MB_OK | MB_ICONERROR);
+		MessageBox(hwnd, "Cannot open game exe for CRC32 calculation.\nPlease check the filename and GameExe setting in \""INIFILE"\".", "LunaPort Error", MB_OK | MB_ICONERROR);
 		exit(1);
 	}
 	if (check_exe && (crc != ENGINE_CRC || cnt != ENGINE_LEN))
@@ -2605,12 +2734,30 @@ void unregister_lobby ()
 	}
 }
 
+void finish_timer ()
+{
+	timeEndPeriod(1);
+}
+
+bool inifile_exists(const char *argv0)
+{
+	char _path[_MAX_PATH] = "";
+	strcpy(_path, argv0);
+	for (int i = strlen(_path) - 1; i >= 0; i--)
+		if (_path[i] == '\\' || _path[i] == '/')
+		{
+			_path[i] = 0;
+			break;
+		}
+	strcat(_path, "\\"INIFILE);
+	return ::PathFileExists(_path) ? true : false;
+}
+
 int main(int argc, char* argv[])
 {
 	WSADATA wsa;
 	char ip_str[NET_STRING_BUFFER], tmp[256];
 	char filename[_MAX_PATH];
-	char replay_dir[_MAX_PATH];
 	SECURITY_ATTRIBUTES sa;
 	OPENFILENAME ofn;
 	int in = 10, old_in = 10;
@@ -2662,8 +2809,7 @@ int main(int argc, char* argv[])
 	event_running = CreateEvent(&sa, TRUE, FALSE, "");
 	event_waiting = CreateEvent(&sa, TRUE, FALSE, "");
 
-	if (argv[0][1] == ':')
-	{
+	if(!::PathFileExists(INIFILE) && inifile_exists(argv[0])) {
 		strcpy(dir_prefix, argv[0]);
 		for (i = strlen(dir_prefix) - 1; i >= 0; i--)
 			if (dir_prefix[i] == '\\' || dir_prefix[i] == '/')
@@ -2671,18 +2817,14 @@ int main(int argc, char* argv[])
 				dir_prefix[i] = 0;
 				break;
 			}
+		_chdir(dir_prefix);
 	}
-	else
-		_getcwd(dir_prefix, _MAX_PATH);
-
-	_chdir(dir_prefix);
-	strcpy(replay_dir, dir_prefix);
-	strcat(replay_dir, "\\Replays\\");
+	else _getcwd(dir_prefix, _MAX_PATH);
 
 	read_config(&port, &record_replay, &allow_spectators, &set_max_stages, &ask_delay, &ask_spectate, &display_framerate,
 	            &display_inputrate, &display_names, game_exe, own_name, set_blacklist, &blacklist_local, &check_exe,
-				&max_points, &keep_session_log, session_log, lobby_url, lobby_comment, &display_lobby_comments,
-				&keep_hosting, sound, &play_host_sound, &play_lobby_sound);
+	            &max_points, &keep_session_log, session_log, lobby_url, lobby_comment, &display_lobby_comments,
+	            &keep_hosting, sound, &play_host_sound, &play_lobby_sound, replays_dir, &max_ipf);
 
 	max_stages = set_max_stages;
 	calc_crcs();
@@ -2700,8 +2842,10 @@ int main(int argc, char* argv[])
 	curl_global_init(CURL_GLOBAL_ALL);
 	lobby.init(lobby_url, kgt_crc, kgt_size, own_name, lobby_comment, port, &lobby_flag, display_lobby_comments, play_lobby_sound);
 	atexit(unregister_lobby);
+	if (timeBeginPeriod(1) == TIMERR_NOERROR)
+		atexit(finish_timer);
 
-	CreateDirectory("Replays", NULL);
+	CreateDirectory(replays_dir, NULL);
 
 	if (argc == 2)
 	{
@@ -2730,6 +2874,7 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	small_task_thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)small_task_thread_proc, NULL, 0, &small_task_thread_id);
 	print_menu(record_replay);
 	do
 	{
@@ -2745,14 +2890,14 @@ int main(int argc, char* argv[])
 			cin.getline(tmp, 256, '\n');
 			if (strlen(tmp))
 			{
-				if (inet_addr(tmp) == INADDR_NONE || inet_addr(tmp) == 0)
+				if (get_ip_from_ipstr(tmp) == INADDR_NONE || get_ip_from_ipstr(tmp) == 0)
 				{
 					l(); printf("Invalid IP: %s\n", tmp); u();
 					break;
 				}
 				strcpy(ip_str, tmp);
 			}
-			if (inet_addr(ip_str) == INADDR_NONE || inet_addr(ip_str) == 0)
+			if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
 			{
 				l(); printf("Invalid IP: %s\n", ip_str); u();
 				break;
@@ -2773,7 +2918,7 @@ int main(int argc, char* argv[])
 				exit_lobby = lobby.menu(ip_str, &lobby_port, &lobby_spec);
 				if (!exit_lobby)
 				{
-					if (inet_addr(ip_str) == INADDR_NONE || inet_addr(ip_str) == 0)
+					if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
 					{
 						l(); printf("Invalid IP: %s\n", ip_str); u();
 						continue;
@@ -2817,14 +2962,13 @@ int main(int argc, char* argv[])
 			ofn.lpstrFilter = "Replay Files (*.rpy)\0*.rpy\0";
 			ofn.lpstrFile = filename;
 			ofn.nMaxFile = _MAX_PATH-1;
-			ofn.lpstrInitialDir = replay_dir;
+			ofn.lpstrInitialDir = replays_dir;
 			ofn.lpstrTitle = "Open Replay";
 			ofn.Flags = OFN_FILEMUSTEXIST | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_ENABLEHOOK | OFN_EXPLORER;
 			ofn.lpstrDefExt = "rpy";
 			ofn.lpfnHook = ofn_hook;
 			if (GetOpenFileName(&ofn))
 			{
-				_chdir(dir_prefix);
 				SetEvent(event_waiting);
 				run_game(0, 0, -1, filename, 0);
 			}
@@ -2850,14 +2994,14 @@ int main(int argc, char* argv[])
 			cin.getline(tmp, 256, '\n');
 			if (strlen(tmp))
 			{
-				if (inet_addr(tmp) == INADDR_NONE || inet_addr(tmp) == 0)
+				if (get_ip_from_ipstr(tmp) == INADDR_NONE || get_ip_from_ipstr(tmp) == 0)
 				{
 					l(); printf("Invalid IP: %s\n", tmp); u();
 					break;
 				}
 				strcpy(ip_str, tmp);
 			}
-			if (inet_addr(ip_str) == INADDR_NONE || inet_addr(ip_str) == 0)
+			if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
 			{
 				l(); printf("Invalid IP: %s\n", ip_str); u();
 				break;
@@ -2896,6 +3040,7 @@ int main(int argc, char* argv[])
 		max_stages = set_max_stages;
 	} while (in != 0);
 
+	PostThreadMessage(small_task_thread_id, WM_QUIT, 0, 0);
 	WSACleanup();
 
 	printf("\n\nLunaPort done.\n");

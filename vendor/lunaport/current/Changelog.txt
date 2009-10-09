@@ -1,3 +1,14 @@
+r49:
+- add FPSHack option to lunaport.ini to control experimental timing code, it is disabled by default
+- add experimental, alternative input/frame timing code
+- set timer period
+- add persistent thread instead of spawning new ones for small tasks [SAM]
+- add MSVC9 project [SAM]
+- bug where game window stays open after the game ends should be fixed, except in the case of timeouts [SAM]
+- ip:port syntax is now accepted to join/spectate games on different ports [SAM]
+- absolute paths can be specified, this means LunaPort can be stored outside the game directory [SAM]
+- path to replay directory can be set in lunaport.ini with the Replays option [SAM]
+
 r48:
 - add Sound, PlayHostConnect and PlayLobbyChange options to lunaport.ini
 - add notify.wav to archive

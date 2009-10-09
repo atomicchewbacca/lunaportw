@@ -1,4 +1,4 @@
-LunaPort r48 Readme
+LunaPort r49 Readme
 
 
 LunaPort is an original netplay application for the free game Vanguard Princess,
@@ -55,12 +55,12 @@ W: Reset game speed to normal, unpause
 E: Slow down game speed
 R: Speed up game speed
 
-Known working: r11, r35-r36, r38-r43, r44-r47
+Known working: r11, r35-r36, r38-r43, r44-r48
 (These versions have been used successfully to play Vanguard Princess.)
 
 Please excuse the desync problems from before. Things should be better now.
 
-Some notes about differences from r38 to r40-r45:
+Some notes about differences from r38 to r40-r49:
 In r39 much of the netcode has been rewritten, to make transmission of data
 between peers much easier. In r40, this has been used to add lots of checks
 about game data to the handshake. These changes also made a protocol version
@@ -77,6 +77,9 @@ will not be possible at all and result in an error message from the start.
 
 Now, let's hope this works. Once it does, I might even get around to cleaning
 up the code.
+
+A GUI version can be found at:
+http://code.google.com/p/lunaportw/
 
 Links:
 http://vp.mizuumi.net/index.php/Main_Page

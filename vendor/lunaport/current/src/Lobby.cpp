@@ -136,7 +136,7 @@ void Lobby::update_menu (lplobby_head *result)
 	games.clear();
 	if (result == NULL)
 		return;
-	for (int i = 0; i < result->n; i++)
+	for (unsigned int i = 0; i < result->n; i++)
 	{
 		r = result->records[i];
 		games.push_back(r);
@@ -171,6 +171,7 @@ bool Lobby::menu (char *ip, int *port, int *spec)
 	// handle errors
 	if (err)
 	{
+		ReleaseMutex(mutex);
 		l();
 		printf("%s\n", http_error(err));
 		u();

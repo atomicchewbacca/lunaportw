@@ -26,11 +26,15 @@ extern FILE *logfile;
 extern void l ();
 extern void u ();
 extern char *ip2str(unsigned long ip);
+extern bool force_esc;
 
 bool get_esc ()
 {
 	HWND hwnd;
 	DWORD pid;
+
+	if (force_esc)
+		return true;
 
 	hwnd = GetForegroundWindow();
 	GetWindowThreadProcessId(hwnd, &pid);
@@ -616,6 +620,7 @@ void ConManager::receive_thread ()
 
 				if (accepted == from.sin_addr.s_addr)
 				{
+					ReleaseMutex(mutex);
 					// resend ok
 					luna_packet ok;
 					simple_luna_packet(&ok, PACKET_TYPE_OK, 1);

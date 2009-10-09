@@ -261,14 +261,14 @@ end:
 int data_get (char *url, unsigned int kgtcrc, unsigned int kgtsize, int *refresh, lplobby_head **result)
 {
 	char kgtcrc_str[9], kgtsize_str[32], version_str[32], lunaport_str[32];
-	int ret = 0;
+	int i, ret = 0;
 	CURL *curl;
 	CURLcode res;
 	struct curl_httppost *formpost = NULL;
 	struct curl_httppost *lastptr = NULL;
 	struct received_data rd = {0, NULL};
 	lplobby_head *response;
-	int i, records;
+	unsigned int records;
 
 	*result = NULL;
 
@@ -313,11 +313,11 @@ int data_get (char *url, unsigned int kgtcrc, unsigned int kgtsize, int *refresh
 
 	*refresh = response->refresh < 1 ? *refresh : response->refresh;
 	*result = response;
-	records = (rd.size - sizeof(lplobby_head)) / sizeof(lplobby_record);
+	records = rd.size > sizeof(lplobby_head) ? (rd.size - sizeof(lplobby_head)) / sizeof(lplobby_record) : 0;
 	response->n = MIN(response->n, records);
 	response->msg[NET_STRING_LENGTH] = 0;
 	clean_string(response->msg);
-	for (i = 0; i < response->n; i++)
+	for (i = 0; i < (int)response->n; i++)
 	{
 		response->records[i].name[NET_STRING_LENGTH] = 0;
 		clean_string(response->records[i].name);
