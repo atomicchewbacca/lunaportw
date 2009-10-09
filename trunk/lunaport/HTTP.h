@@ -22,7 +22,7 @@
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4200)
-#pragma pack (push, 1)
+#pragma pack(push, 1)
 #endif
 
 typedef struct _lplobby_record
@@ -48,7 +48,7 @@ typedef struct _lplobby_head
 } PACKED_STRUCT lplobby_head;
 
 #ifdef _MSC_VER
-#pragma pack (pop)
+#pragma pack(pop)
 #endif
 
 // call curl_global_init(CURL_GLOBAL_ALL); at startup

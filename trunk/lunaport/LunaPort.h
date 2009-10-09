@@ -27,7 +27,8 @@
 
 
 // game settings
-#define VERSION "r48"
+#define VERSION "r49"
+#define INIFILE "lunaport.ini"
 #define INIFILE "lunaport.ini"
 #define GAME "ヴァンガードプリンセス.exe"
 #define ALTGAME "game.exe"
