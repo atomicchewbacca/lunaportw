@@ -30,10 +30,11 @@ extern bool force_esc;
 
 bool get_esc ()
 {
-	if(force_esc) return true;
-
 	HWND hwnd;
 	DWORD pid;
+
+	if (force_esc)
+		return true;
 
 	hwnd = GetForegroundWindow();
 	GetWindowThreadProcessId(hwnd, &pid);
