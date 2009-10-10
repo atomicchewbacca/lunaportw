@@ -76,9 +76,11 @@ unsigned int set_max_stages;            // number of stages set in lunaport.ini
 int rnd_seed;                           // seed of current game
 FILE *write_replay;                     // write replay here
 bool recording_ended;                   // set after faking a packet, this ensures it is not written to replay file
+bool force_esc = false;                 // simulate esc press
 DWORD kgt_crc;                          // CRC32 of kgt file
 long kgt_size;                          // size of kgt file
 int blacklist_local;                    // 1 = use stage blacklist for local games too, 0 = don't
+char max_ipf;
 int terminate_ping_thread;
 int check_exe;
 int ask_spectate;
@@ -98,7 +100,6 @@ ConManager conmanager;
 StageManager stagemanager;
 Session session;
 Lobby lobby;
-bool force_esc = false;
 
 void l () { /*WaitForSingleObject(mutex_print, INFINITE);*/ } // l() to lock print mutex
 void u () { /*ReleaseMutex(mutex_print);*/ } // u() to unlock print mutex
@@ -558,7 +559,7 @@ FILE *open_replay_file (char *filename, int *seed)
 	int stages;
 
 	ZeroMemory(fin_filename, _MAX_PATH);
-	if (strlen(filename) > 1 && filename[1] == ':')
+	if (filename[0] && filename[1] == ':')
 		strcpy(fin_filename, filename);
 	else
 	{
@@ -673,7 +674,7 @@ bool replay_input_handler (void *address, HANDLE proc_thread, FILE *replay, int 
 	return false;
 }
 
-void set_caption (void *p);
+void set_caption (char *title);
 void send_foreground ();
 void spec_handshake (unsigned long peer);
 enum SmallTaskMessage {
@@ -700,10 +701,10 @@ DWORD WINAPI small_task_thread_proc(LPVOID)
 	return 0;
 }
 
-void set_caption (void *p)
+void set_caption (char *title)
 {
 	HWND game_window = FindWindow("KGT2KGAME", NULL);
-	SetWindowText(game_window, (char *)p);
+	SetWindowText(game_window, title);
 }
 
 void send_foreground ()
@@ -881,7 +882,7 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 	ZeroMemory(&window_title, sizeof(window_title));
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);
-	if(strlen(game_exe) > 1 && game_exe[1] == ':') {
+	if(game_exe[0] && game_exe[1] == ':') {
 		strcpy(path, game_exe);
 	}
 	else {
@@ -1336,6 +1337,12 @@ int run_game (int seed, int network, int record_replay, char *filename, int spec
 
 				WriteProcessMemory(proc, (void *)REMOTE_P_FUNC, remote_p_func, sizeof(remote_p_func), NULL); // remote player input grabber
 				WriteProcessMemory(proc, (void *)REMOTE_P_JMPBACK, remote_p_jmpback[remote_p], sizeof(remote_p_jmpback[remote_p]), NULL); // remote player input grabber jump back
+
+				if (max_ipf)
+				{
+					WriteProcessMemory(proc, (void *)FPS_HACK, fps_hack_func, sizeof(fps_hack_func), NULL); // insert alternative timing code
+					WriteProcessMemory(proc, (void *)MAX_INPUTS_PER_FRAME, &max_ipf, 1, NULL); // limit number of dropped frames to max_ipf
+				}
 
 				if (display_framerate || display_inputrate)
 				{
@@ -2066,7 +2073,7 @@ void spectate_game (char *ip_str, int port, int record_replay)
 		TERMINATE_EARLY
 	}
 
-	l(); printf("Game on started. Recieving game data.\n"); u();
+	l(); printf("Game started. Recieving game data.\n"); u();
 
 	if (!receive_string(p1_name, ip) || !receive_string(p2_name, ip))
 	{
@@ -2412,7 +2419,7 @@ HOST:
 	conmanager.init(&sock, port, (DefaultCallback)spec_accept_callback);
 	serve_specs = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)serve_spectators, NULL, 0, NULL);
 
-	l(); printf("Waiting for connection to LunaPort...(ESC to abort)\n"); u();
+	l(); printf("Waiting for connection to LunaPort... (ESC to abort)\n"); u();
 WAIT:
 	TerminateThread(serve_specs, 0);
 	CloseHandle(serve_specs);
@@ -2643,7 +2650,7 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 				  int *ask_spectate, int *display_framerate, int *display_inputrate, int *display_names, char *game_exe,
 				  char *own_name, char *set_blacklist, int *blacklist_local, int *check_exe, int *max_points,
 				  int *keep_session_log, char *session_log, char *lobby_url, char *lobby_comment, int *display_lobby_comments,
-				  int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound, char *replays_dir)
+				  int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound, char *replays_dir, char *max_ipf)
 {
 	char config_filename[_MAX_PATH];
 	strcpy(config_filename, dir_prefix);
@@ -2665,6 +2672,7 @@ void read_config (unsigned int *port, int *record_replay, int *allow_spectators,
 	*max_points = GetPrivateProfileInt("LunaPort", "MaxPoints", 2, config_filename);
 	*keep_session_log = GetPrivateProfileInt("LunaPort", "KeepSessionLog", 1, config_filename);
 	*check_exe = GetPrivateProfileInt("LunaPort", "CheckExeCRC", 1, config_filename);
+	*max_ipf = MAX(0, MIN(255, GetPrivateProfileInt("LunaPort", "FPSHack", 0, config_filename)));
 	GetPrivateProfileString("LunaPort", "GameExe", GAME, game_exe, _MAX_PATH-1, config_filename);
 	GetPrivateProfileString("LunaPort", "Replays", REPLAYDIR, replays_dir, _MAX_PATH-1, config_filename);
 	GetPrivateProfileString("LunaPort", "PlayerName", "Unknown", own_name, NET_STRING_BUFFER-1, config_filename);
@@ -2682,7 +2690,7 @@ void calc_crcs ()
 	DWORD crc;
 	long cnt;
 
-	if(strlen(game_exe) > 1 && game_exe[1] == ':') {
+	if(game_exe[0] && game_exe[1] == ':') {
 		strcpy(path, game_exe);
 	}
 	else {
@@ -2724,6 +2732,11 @@ void unregister_lobby ()
 		data_del(lobby_url, kgt_crc, kgt_size, port, &refresh);
 		lobby.disconnect();
 	}
+}
+
+void finish_timer ()
+{
+	timeEndPeriod(1);
 }
 
 bool inifile_exists(const char *argv0)

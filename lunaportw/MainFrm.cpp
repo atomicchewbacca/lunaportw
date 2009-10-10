@@ -97,6 +97,22 @@ LRESULT CMainFrame::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*
 	pLoop->RemoveMessageFilter(this);
 	pLoop->RemoveIdleHandler(this);
 
+	CRect rc;
+	if(GetWindowRect(&rc)) {
+		char config_filename[_MAX_PATH];
+		strcpy(config_filename, dir_prefix);
+		strcat(config_filename, "\\"INIFILE);
+		char w[32];
+		sprintf_s(w, 32, "%d", rc.left);
+		::WritePrivateProfileStringA("MainWindow", "Left", w, config_filename);
+		sprintf_s(w, 32, "%d", rc.top);
+		::WritePrivateProfileStringA("MainWindow", "Top", w, config_filename);
+		sprintf_s(w, 32, "%d", rc.right);
+		::WritePrivateProfileStringA("MainWindow", "Right", w, config_filename);
+		sprintf_s(w, 32, "%d", rc.bottom);
+		::WritePrivateProfileStringA("MainWindow", "Bottom", w, config_filename);
+	}
+
 	bHandled = FALSE;
 	return 1;
 }
