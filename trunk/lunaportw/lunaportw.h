@@ -54,6 +54,7 @@ extern StageManager stagemanager;
 extern Session session;
 extern Lobby lobby;
 extern bool force_esc;
+extern char max_ipf;
 
 extern int record_replay, ask_delay;
 
@@ -100,10 +101,10 @@ extern void ping_thread_loop (unsigned long peer);
 extern void print_menu (int record_replay);
 extern UINT CALLBACK ofn_hook (HWND hdlg, UINT msg, WPARAM wparam, LPARAM lparam);
 extern void read_config (unsigned int *port, int *record_replay, int *allow_spectators, unsigned int *max_stages, int *ask_delay,
-	int *ask_spectate, int *display_framerate, int *display_inputrate, int *display_names, char *game_exe,
-	char *own_name, char *set_blacklist, int *blacklist_local, int *check_exe, int *max_points,
-	int *keep_session_log, char *session_log, char *lobby_url, char *lobby_comment, int *display_lobby_comments,
-	int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound, char *replays_dir);
+				  int *ask_spectate, int *display_framerate, int *display_inputrate, int *display_names, char *game_exe,
+				  char *own_name, char *set_blacklist, int *blacklist_local, int *check_exe, int *max_points,
+				  int *keep_session_log, char *session_log, char *lobby_url, char *lobby_comment, int *display_lobby_comments,
+				  int *keep_hosting, char *sound, int *play_host_sound, int *play_lobby_sound, char *replays_dir, char *max_ipf);
 extern void calc_crcs ();
 extern void unregister_lobby ();
 extern bool inifile_exists(const char *argv0);

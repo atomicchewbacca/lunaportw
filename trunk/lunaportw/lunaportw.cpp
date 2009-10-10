@@ -379,7 +379,7 @@ static void save_config(int max_points, int keep_session_log, const char *sessio
 {
 	char config_filename[_MAX_PATH];
 	strcpy(config_filename, dir_prefix);
-	strcat(config_filename, "\\" INIFILE);
+	strcat(config_filename, "\\"INIFILE);
 	_WritePrivateProfileIntA("LunaPort", "Port", port, config_filename);
 	_WritePrivateProfileIntA("LunaPort", "RecordReplayDefault", record_replay, config_filename);
 	_WritePrivateProfileIntA("LunaPort", "AllowSpectatorsDefault", allow_spectators, config_filename);
@@ -397,6 +397,7 @@ static void save_config(int max_points, int keep_session_log, const char *sessio
 	_WritePrivateProfileIntA("LunaPort", "PlayHostConnect", play_host_sound, config_filename);
 	_WritePrivateProfileIntA("LunaPort", "PlayLobbyChange", play_lobby_sound, config_filename);
 	_WritePrivateProfileIntA("LunaPort", "CheckExeCRC", check_exe, config_filename);
+	_WritePrivateProfileIntA("LunaPort", "FPSHack", max_ipf, config_filename);
 	::WritePrivateProfileStringA("LunaPort", "GameExe", game_exe, config_filename);
 	::WritePrivateProfileStringA("LunaPort", "Replays", replays_dir, config_filename);
 	::WritePrivateProfileStringA("LunaPort", "PlayerName", own_name, config_filename);
@@ -429,47 +430,9 @@ static int lobby_port, lobby_spec;
 
 
 static HANDLE lunaport_thread = NULL;
-static HANDLE old_lunaport_thread = NULL;
 static unsigned int __stdcall lunaport_thfunc(void *_in)
 {
-	int in = (int)_in;
-	if(old_lunaport_thread) {
-		force_esc = true;
-		DWORD code;
-		if(::GetExitCodeThread(old_lunaport_thread, &code) && code == STILL_ACTIVE) {
-			HWND game_window = ::FindWindow(L"KGT2KGAME", NULL);
-			if(game_window) ::PostMessage(game_window, WM_CLOSE, 0, 0);
-			int i = 0;
-			while(i++ < 100 && ::GetExitCodeThread(old_lunaport_thread, &code) && code == STILL_ACTIVE) ::Sleep(30);
-		}
-		if(::GetExitCodeThread(old_lunaport_thread, &code) && code == STILL_ACTIVE) {
-			::TerminateThread(old_lunaport_thread, 2);
-			::Sleep(30);
-			if (game_history != NULL)
-			{
-				free(game_history);
-				game_history = NULL;
-				game_history_pos = 0;
-				spec_pos = 0;
-			}
-			ResetEvent(event_running);
-			ResetEvent(event_waiting);
-			spectators.clear();
-			p1_name[0] = 0;
-			p2_name[0] = 0;
-			blacklist1[0] = 0;
-			blacklist2[0] = 0;
-			write_replay = NULL;
-			recording_ended = false;
-			max_stages = set_max_stages;
-			ReleaseMutex(mutex_history);
-		}
-		::CloseHandle(old_lunaport_thread);
-		old_lunaport_thread = NULL;
-	}
-	force_esc = false;
-
-	switch (in)
+	switch ((int)_in)
 	{
 	case 1:
 		printf("Host Game.\n");
@@ -589,7 +552,7 @@ static unsigned int __stdcall lunaport_thfunc(void *_in)
 					spectate_game(ip_str, lobby_port, record_replay);
 			}
 		} while (!exit_lobby);*/
-		if (inet_addr(ip_str) == INADDR_NONE || inet_addr(ip_str) == 0)
+		if (get_ip_from_ipstr(ip_str) == INADDR_NONE || get_ip_from_ipstr(ip_str) == 0)
 		{
 			l(); printf("Invalid IP: %s\n", ip_str); u();
 			break;
@@ -786,7 +749,48 @@ static unsigned int __stdcall lunaport_thfunc(void *_in)
 
 void do_lunaport(int i)
 {
-	old_lunaport_thread = lunaport_thread;
+	if(lunaport_thread) {
+		force_esc = true;
+		DWORD code;
+		if(::GetExitCodeThread(lunaport_thread, &code) && code == STILL_ACTIVE) {
+			HWND game_window = ::FindWindow(L"KGT2KGAME", NULL);
+			if(game_window) ::PostMessage(game_window, WM_CLOSE, 0, 0);
+			int i = 0;
+			while(i++ < 100 && ::GetExitCodeThread(lunaport_thread, &code) && code == STILL_ACTIVE) ::Sleep(30);
+		}
+		if(::GetExitCodeThread(lunaport_thread, &code) && code == STILL_ACTIVE) {
+			::TerminateThread(lunaport_thread, 2);
+			::WaitForSingleObject(lunaport_thread, INFINITE);
+			if (write_replay != NULL)
+			{
+				fclose(write_replay);
+				write_replay = NULL;
+			}
+			session.end();
+			lobby.disconnect();
+			if (game_history != NULL)
+			{
+				free(game_history);
+				game_history = NULL;
+				game_history_pos = 0;
+				spec_pos = 0;
+			}
+			ResetEvent(event_running);
+			ResetEvent(event_waiting);
+			spectators.clear();
+			p1_name[0] = 0;
+			p2_name[0] = 0;
+			blacklist1[0] = 0;
+			blacklist2[0] = 0;
+			write_replay = NULL;
+			recording_ended = false;
+			max_stages = set_max_stages;
+			ReleaseMutex(mutex_history);
+		}
+		::CloseHandle(lunaport_thread);
+		lunaport_thread = NULL;
+	}
+	force_esc = false;
 	lunaport_thread = (HANDLE)::_beginthreadex(NULL, 0, lunaport_thfunc, (void *)i, 0, NULL);
 }
 
@@ -805,7 +809,28 @@ int Run(LPTSTR /*lpstrCmdLine*/ = NULL, int nCmdShow = SW_SHOWDEFAULT)
 
 	CMainFrame wndMain;
 
-	if(wndMain.CreateEx() == NULL)
+	CRect rc;
+	{
+		char config_filename[_MAX_PATH];
+		strcpy(config_filename, dir_prefix);
+		strcat(config_filename, "\\"INIFILE);
+		rc.left   = ::GetPrivateProfileIntA("MainWindow", "Left", 0, config_filename);
+		rc.top    = ::GetPrivateProfileIntA("MainWindow", "Top", 0, config_filename);
+		rc.right  = ::GetPrivateProfileIntA("MainWindow", "Right", 0, config_filename);
+		rc.bottom = ::GetPrivateProfileIntA("MainWindow", "Bottom", 0, config_filename);
+
+		CRect dtrc;
+		::GetWindowRect(::GetDesktopWindow(), &dtrc);
+		if(!dtrc.PtInRect(CPoint(rc.left,rc.top))||!dtrc.PtInRect(CPoint(rc.left,rc.bottom))||!dtrc.PtInRect(CPoint(rc.right,rc.top))||!dtrc.PtInRect(CPoint(rc.right,rc.bottom))) {
+			int w = rc.Width();
+			int h = rc.Height();
+			rc.left = 0;
+			rc.top = 0;
+			rc.right = w;
+			rc.bottom = h;
+		}
+	}
+	if(wndMain.CreateEx(NULL, (rc.IsRectEmpty() ? NULL : &rc)) == NULL)
 	{
 		ATLTRACE(_T("メイン ウィンドウの作成に失敗しました！\n"));
 		return 0;
@@ -919,8 +944,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	}
 	read_config(&port, &record_replay, &allow_spectators, &set_max_stages, &ask_delay, &ask_spectate, &display_framerate,
 	            &display_inputrate, &display_names, game_exe, own_name, set_blacklist, &blacklist_local, &check_exe,
-				&max_points, &keep_session_log, session_log, lobby_url, lobby_comment, &display_lobby_comments,
-				&keep_hosting, sound, &play_host_sound, &play_lobby_sound, replays_dir);
+	            &max_points, &keep_session_log, session_log, lobby_url, lobby_comment, &display_lobby_comments,
+	            &keep_hosting, sound, &play_host_sound, &play_lobby_sound, replays_dir, &max_ipf);
 	while(!exefile_exists()) {
 		::MessageBox(NULL, CString(MAKEINTRESOURCE(IDS_SPECIFYEXE)), _T("LunaPortW Error."), MB_OK | MB_ICONERROR);
 		CSettingDlg dlg(game_exe, replays_dir, own_name, lobby_url, lobby_comment, port);
